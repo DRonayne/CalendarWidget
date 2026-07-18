@@ -16,6 +16,8 @@ naming:
     ignoreAnnotated: ['Composable']
 
 complexity:
+  CyclomaticComplexMethod:
+    ignoreAnnotated: ['Composable']
   LongParameterList:
     ignoreAnnotated: ['Composable']
     # Hilt/DI constructors are legitimately wide; functions stay at the default.

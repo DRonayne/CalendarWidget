@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.darach.calendarwidget.core.designsystem"
 }
+
+dependencies {
+    implementation(libs.kotlinx.collections.immutable)
+}
