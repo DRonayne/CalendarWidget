@@ -4,6 +4,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build for and attach the APK to (e.g. v1.0.0-alpha03). Leave empty to just build + distribute without touching a GitHub release — useful as a manual fallback if the release event didn't auto-trigger this workflow."
+        required: false
 
 jobs:
   build-signed-apk:
@@ -13,6 +17,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -31,6 +37,12 @@ jobs:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
+      - name: Restore Firebase App Distribution service account
+        if: env.FIREBASE_SERVICE_ACCOUNT_B64 != ''
+        env:
+          FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}
+        run: echo "$FIREBASE_SERVICE_ACCOUNT_B64" | base64 -d > "$RUNNER_TEMP/firebase-service-account.json"
+
       - name: Build signed release APK
         env:
           CALENDARWIDGET_STORE_FILE: ${{ runner.temp }}/release.jks
@@ -40,9 +52,19 @@ jobs:
         run: ./gradlew :app:assembleRelease
 
       - name: Attach APK to release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || inputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/release/app-release.apk calendar-agenda-widget-${{ github.event.release.tag_name }}.apk
-          gh release upload "${{ github.event.release.tag_name }}" calendar-agenda-widget-${{ github.event.release.tag_name }}.apk
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          cp app/build/outputs/apk/release/app-release.apk "calendar-agenda-widget-${TAG}.apk"
+          gh release upload "${TAG}" "calendar-agenda-widget-${TAG}.apk" --clobber
+
+      # Testers are managed as the "release-testers" group in Firebase App Distribution
+      # (console/CLI) — never as emails here or anywhere in git history.
+      - name: Distribute via Firebase App Distribution
+        if: env.FIREBASE_SERVICE_ACCOUNT_B64 != ''
+        env:
+          FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: ./gradlew :app:appDistributionUploadRelease

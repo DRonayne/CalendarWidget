@@ -1,9 +1,34 @@
+import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
+
 plugins {
     id("calendarwidget.android.application.compose")
     id("calendarwidget.hilt")
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dependency.guard)
     alias(libs.plugins.baselineprofile)
+    // Applied unconditionally (unlike google-services/crashlytics below) so the typed
+    // `firebaseAppDistribution { }` DSL is available — Kotlin DSL only generates typed
+    // accessors for plugins declared statically here. It's inert unless its upload task
+    // actually runs, which requires Firebase credentials no contributor build has by default.
+    alias(libs.plugins.firebase.appdistribution)
+}
+
+// google-services/crashlytics activate only when the (gitignored) google-services.json is
+// present, so a fresh clone without Firebase access still builds.
+val firebaseConfigured = file("google-services.json").exists()
+if (firebaseConfigured) {
+    apply(
+        plugin =
+            libs.plugins.google.services
+                .get()
+                .pluginId,
+    )
+    apply(
+        plugin =
+            libs.plugins.firebase.crashlytics
+                .get()
+                .pluginId,
+    )
 }
 
 dependencyGuard {
@@ -55,24 +80,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // "release-testers" is a Firebase App Distribution tester *group* — managed in the
+            // Firebase console/CLI, never as emails in this file or git history. appId is
+            // auto-detected from google-services.json; auth via GOOGLE_APPLICATION_CREDENTIALS
+            // (CI) or `firebase login` (local). Uploading requires Firebase setup either way.
+            firebaseAppDistribution {
+                groups = "release-testers"
+            }
         }
     }
-}
-
-// Firebase activates only when the (gitignored) google-services.json is present.
-if (file("google-services.json").exists()) {
-    apply(
-        plugin =
-            libs.plugins.google.services
-                .get()
-                .pluginId,
-    )
-    apply(
-        plugin =
-            libs.plugins.firebase.crashlytics
-                .get()
-                .pluginId,
-    )
 }
 
 dependencies {
