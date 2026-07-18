@@ -6,6 +6,9 @@ package com.darach.calendarwidget.core.data.refresh
  */
 interface WidgetRefresher {
     fun requestRefresh(reason: RefreshReason)
+
+    /** Like [requestRefresh], but suspends until the refresh finishes. True on success. */
+    suspend fun refreshAndAwait(reason: RefreshReason): Boolean
 }
 
 enum class RefreshReason {

@@ -7,6 +7,7 @@ import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
 import com.darach.calendarwidget.core.model.WidgetConfig
 import com.darach.calendarwidget.core.model.WidgetConfigStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -42,9 +43,19 @@ class FakeWidgetConfigRepository(
 
 class FakeWidgetRefresher : WidgetRefresher {
     val requests = mutableListOf<RefreshReason>()
+    var awaitResult: Boolean = true
+
+    /** Set to make [refreshAndAwait] suspend until the test completes it. */
+    var awaitGate: CompletableDeferred<Unit>? = null
 
     override fun requestRefresh(reason: RefreshReason) {
         requests += reason
+    }
+
+    override suspend fun refreshAndAwait(reason: RefreshReason): Boolean {
+        requests += reason
+        awaitGate?.await()
+        return awaitResult
     }
 }
 
