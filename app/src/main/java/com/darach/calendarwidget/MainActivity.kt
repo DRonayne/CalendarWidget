@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
                                 setResult(RESULT_OK, resultIntent(appWidgetId))
                                 finish()
                             },
+                            onCloseApp = ::goHome,
                         )
                     }
                 }
@@ -84,4 +85,14 @@ class MainActivity : ComponentActivity() {
 
     private fun resultIntent(appWidgetId: Int): Intent =
         Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+
+    /** Land on the launcher home screen so the freshly saved widget is visible. */
+    private fun goHome() {
+        val home =
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(home)
+        finish()
+    }
 }

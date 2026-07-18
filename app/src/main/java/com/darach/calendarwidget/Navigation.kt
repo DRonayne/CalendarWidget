@@ -18,6 +18,7 @@ fun MainNavigation(
     startRoute: NavKey,
     versionName: String,
     onFinishConfigure: (Int) -> Unit,
+    onCloseApp: () -> Unit,
 ) {
     val backStack = rememberNavBackStack(startRoute)
 
@@ -32,6 +33,7 @@ fun MainNavigation(
                         onOpenCalendars = { backStack.add(CalendarsRoute(it)) },
                         onOpenAbout = { backStack.add(AboutRoute) },
                         onFinishWithResult = {},
+                        onCloseApp = onCloseApp,
                     )
                 }
                 entry<ConfigureRoute> { route ->
@@ -40,6 +42,7 @@ fun MainNavigation(
                         onOpenCalendars = { backStack.add(CalendarsRoute(it)) },
                         onOpenAbout = { backStack.add(AboutRoute) },
                         onFinishWithResult = onFinishConfigure,
+                        onCloseApp = onCloseApp,
                     )
                 }
                 entry<CalendarsRoute> { route ->

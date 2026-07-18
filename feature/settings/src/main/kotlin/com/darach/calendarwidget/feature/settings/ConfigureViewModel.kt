@@ -72,7 +72,9 @@ class ConfigureViewModel
                 }
                 refresher.requestRefresh(RefreshReason.CONFIG_CHANGED)
                 analytics.track(AnalyticsEvent.ConfigSaved)
-                _effects.send(if (isInstance) ConfigureEffect.FinishWithResult(appWidgetId) else ConfigureEffect.Saved)
+                _effects.send(
+                    if (isInstance) ConfigureEffect.FinishWithResult(appWidgetId) else ConfigureEffect.CloseApp,
+                )
             }
         }
 
@@ -113,6 +115,6 @@ sealed interface ConfigureEffect {
         val appWidgetId: Int,
     ) : ConfigureEffect
 
-    /** Global template saved; stay on screen with confirmation. */
-    data object Saved : ConfigureEffect
+    /** Global template saved; close the app so the user sees their widget update. */
+    data object CloseApp : ConfigureEffect
 }
