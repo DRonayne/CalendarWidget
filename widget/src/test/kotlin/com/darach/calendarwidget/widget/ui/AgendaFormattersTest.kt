@@ -38,30 +38,30 @@ class AgendaFormattersTest {
     ): Instant = LocalDateTime.of(d, LocalTime.of(h, m)).atZone(london).toInstant()
 
     @Test
-    fun `day headers use relative names`() {
-        assertEquals("Today · 20 Jul", AgendaFormatters.dayHeader(day, day, Locale.UK))
-        assertEquals("Tomorrow · 21 Jul", AgendaFormatters.dayHeader(day.plusDays(1), day, Locale.UK))
-        assertEquals("Yesterday · 19 Jul", AgendaFormatters.dayHeader(day.minusDays(1), day, Locale.UK))
-        assertEquals("Wednesday · 22 Jul", AgendaFormatters.dayHeader(day.plusDays(2), day, Locale.UK))
+    fun `today header is TODAY, other days use full uppercase names`() {
+        assertEquals("TODAY", AgendaFormatters.dayHeader(day, day, Locale.UK))
+        assertEquals("TUESDAY 21 JULY", AgendaFormatters.dayHeader(day.plusDays(1), day, Locale.UK))
+        assertEquals("SUNDAY 19 JULY", AgendaFormatters.dayHeader(day.minusDays(1), day, Locale.UK))
+        assertEquals("WEDNESDAY 22 JULY", AgendaFormatters.dayHeader(day.plusDays(2), day, Locale.UK))
     }
 
     @Test
-    fun `same-day event formats a 24h range`() {
-        val label = AgendaFormatters.timeLabel(event(at(day, 9), at(day, 10, 15)), day, london, use24Hour = true)
-        assertEquals("09:00 – 10:15", label)
+    fun `same-day event shows start time only in 24h`() {
+        val label = AgendaFormatters.startTimeLabel(event(at(day, 9), at(day, 10, 15)), day, london, use24Hour = true)
+        assertEquals("09:00", label)
     }
 
     @Test
-    fun `same-day event formats a 12h range`() {
-        val label = AgendaFormatters.timeLabel(event(at(day, 9), at(day, 10, 15)), day, london, use24Hour = false)
-        val normalized = label.lowercase().replace(' ', ' ').replace(' ', ' ')
-        assertEquals("9:00 am – 10:15 am", normalized)
+    fun `same-day event shows start time only in 12h`() {
+        val label = AgendaFormatters.startTimeLabel(event(at(day, 9), at(day, 10, 15)), day, london, use24Hour = false)
+        val normalized = label.lowercase().replace(' ', ' ').replace(' ', ' ')
+        assertEquals("9:00 am", normalized)
     }
 
     @Test
     fun `all-day event says all day`() {
         val label =
-            AgendaFormatters.timeLabel(
+            AgendaFormatters.startTimeLabel(
                 event(at(day, 0), at(day.plusDays(1), 0), allDay = true),
                 day,
                 london,
@@ -71,16 +71,10 @@ class AgendaFormattersTest {
     }
 
     @Test
-    fun `multi-day event shows continuation arrows per day`() {
+    fun `multi-day event shows start on first day and ongoing after`() {
         val e = event(at(day, 22), at(day.plusDays(2), 2))
-        assertEquals("22:00 →", AgendaFormatters.timeLabel(e, day, london, true))
-        assertEquals("All day", AgendaFormatters.timeLabel(e, day.plusDays(1), london, true))
-        assertEquals("→ 02:00", AgendaFormatters.timeLabel(e, day.plusDays(2), london, true))
-    }
-
-    @Test
-    fun `event ending at midnight counts as ending on that day`() {
-        val e = event(at(day, 23), at(day.plusDays(1), 0))
-        assertEquals("23:00 – 00:00", AgendaFormatters.timeLabel(e, day, london, true))
+        assertEquals("22:00", AgendaFormatters.startTimeLabel(e, day, london, true))
+        assertEquals("Ongoing", AgendaFormatters.startTimeLabel(e, day.plusDays(1), london, true))
+        assertEquals("Ongoing", AgendaFormatters.startTimeLabel(e, day.plusDays(2), london, true))
     }
 }

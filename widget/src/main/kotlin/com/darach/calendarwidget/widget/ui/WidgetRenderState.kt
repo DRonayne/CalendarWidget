@@ -3,6 +3,7 @@ package com.darach.calendarwidget.widget.ui
 import android.graphics.Bitmap
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.WidgetConfig
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -14,6 +15,7 @@ data class WidgetRenderState(
     val days: List<AgendaDay>,
     val config: WidgetConfig,
     val today: LocalDate,
+    val now: Instant,
     val zone: ZoneId,
     val use24Hour: Boolean,
     val packageName: String,
