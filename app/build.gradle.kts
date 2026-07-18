@@ -14,8 +14,11 @@ android {
 
     defaultConfig {
         applicationId = "com.darach.calendarwidget"
-        versionCode = 1
-        versionName = "0.1.0"
+        // version.txt is owned by release-please; versionCode derives from it.
+        val semver = rootProject.file("version.txt").readText().trim()
+        val (major, minor, patch) = semver.split('.').map(String::toInt)
+        versionCode = major * 10_000 + minor * 100 + patch
+        versionName = semver
     }
 
     buildTypes {
