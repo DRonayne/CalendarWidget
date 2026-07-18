@@ -24,6 +24,8 @@ data class WidgetConfig(
     val hiddenCalendarIds: Set<Long> = emptySet(),
     val showAttendeePhotos: Boolean = true,
     val showAddButton: Boolean = false,
+    val showEndTime: Boolean = false,
+    val showDurationChip: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_DAYS_AHEAD = 14

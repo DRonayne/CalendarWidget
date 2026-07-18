@@ -46,6 +46,8 @@ private const val HORIZONTAL_PADDING = 10
 private const val RAIL_WIDTH = 30
 private const val ICON_BADGE_SIZE = 22
 private const val ICON_GLYPH_SIZE = 12
+private val DURATION_CHIP_BACKGROUND = Color(0xFF37342F)
+private val DURATION_CHIP_TEXT = Color(0xFFF5EFE6)
 
 @Composable
 fun AgendaWidget(state: WidgetRenderState) {
@@ -339,11 +341,50 @@ private fun SecondaryLine(
     state: WidgetRenderState,
     scale: Float,
 ) {
-    val time = AgendaFormatters.startTimeLabel(event, day.date, state.zone, state.use24Hour)
+    val time =
+        AgendaFormatters.timeLabel(event, day.date, state.zone, state.use24Hour, state.config.showEndTime)
     val text = if (event.location != null) "$time · ${event.location}" else time
-    Text(
-        text = text,
-        style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (11 * scale).sp),
-        maxLines = 1,
-    )
+    val duration =
+        if (state.config.showDurationChip) {
+            AgendaFormatters.durationLabel(event, day.date, state.zone)
+        } else {
+            null
+        }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = text,
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (11 * scale).sp),
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        if (duration != null) {
+            Spacer(GlanceModifier.width(4.dp))
+            DurationChip(duration, scale)
+        }
+    }
+}
+
+@Composable
+private fun DurationChip(
+    text: String,
+    scale: Float,
+) {
+    Box(
+        modifier =
+            GlanceModifier
+                .background(ColorProvider(DURATION_CHIP_BACKGROUND))
+                .cornerRadius(8.dp)
+                .padding(horizontal = 7.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = text,
+            style =
+                TextStyle(
+                    color = ColorProvider(DURATION_CHIP_TEXT),
+                    fontSize = (10 * scale).sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            maxLines = 1,
+        )
+    }
 }

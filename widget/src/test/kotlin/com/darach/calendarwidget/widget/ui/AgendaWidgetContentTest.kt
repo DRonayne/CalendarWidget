@@ -172,6 +172,46 @@ class AgendaWidgetContentTest {
         }
 
     @Test
+    fun `end time is hidden by default and shown when enabled`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(
+                        listOf(AgendaDay(today, listOf(event("Standup", location = "Room 4")))),
+                        config = WidgetConfig(showEndTime = true),
+                    ),
+                )
+            }
+            onNode(hasText("09:00 - 10:00 · Room 4")).assertExists()
+        }
+
+    @Test
+    fun `duration chip is hidden by default and shown when enabled`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(
+                        listOf(AgendaDay(today, listOf(event("Standup")))),
+                        config = WidgetConfig(showDurationChip = true),
+                    ),
+                )
+            }
+            onNode(hasText("1hr")).assertExists()
+        }
+
+    @Test
+    fun `duration chip does not render when disabled`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(state(listOf(AgendaDay(today, listOf(event("Standup"))))))
+            }
+            onNode(hasText("1hr")).assertDoesNotExist()
+        }
+
+    @Test
     fun `day drops out entirely once all its events have passed`() =
         runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))

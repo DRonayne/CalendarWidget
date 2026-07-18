@@ -37,6 +37,8 @@ class WidgetConfigStoreTest {
                 hideDeclined = false,
                 hiddenCalendarIds = setOf(3L, 5L),
                 showAttendeePhotos = false,
+                showEndTime = true,
+                showDurationChip = true,
             )
         val store = WidgetConfigStore(global = config, byWidgetId = mapOf(1 to config))
 
