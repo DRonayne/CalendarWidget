@@ -5,6 +5,7 @@ import com.darach.calendarwidget.core.common.analytics.AnalyticsEvent
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.model.WidgetConfig
 import com.darach.calendarwidget.core.model.WidgetConfigStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -13,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -81,6 +83,29 @@ class ConfigureViewModelTest {
             assertEquals(10, configs.current().configFor(7).daysAhead)
             assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
             assertEquals(listOf<AnalyticsEvent>(AnalyticsEvent.ConfigSaved), analytics.events)
+        }
+
+    @Test
+    fun `save waits for the refresh to finish before signalling done`() =
+        runTest(dispatcher) {
+            val vm = viewModel(appWidgetId = 7)
+            dispatcher.scheduler.advanceUntilIdle()
+            val gate = CompletableDeferred<Unit>()
+            refresher.awaitGate = gate
+
+            vm.effects.test {
+                vm.onEvent(ConfigureEvent.SaveClicked)
+                // runCurrent (not advanceUntilIdle) so the withTimeoutOrNull delay isn't
+                // fast-forwarded through while we're still mid-await on the gate.
+                dispatcher.scheduler.runCurrent()
+                assertTrue(vm.uiState.value.saving)
+                expectNoEvents()
+
+                gate.complete(Unit)
+                dispatcher.scheduler.advanceUntilIdle()
+                assertEquals(ConfigureEffect.FinishWithResult(7), awaitItem())
+            }
+            assertFalse(vm.uiState.value.saving)
         }
 
     @Test

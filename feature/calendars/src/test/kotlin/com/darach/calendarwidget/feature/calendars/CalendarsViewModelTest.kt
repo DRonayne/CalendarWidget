@@ -155,4 +155,9 @@ private class FakeRefresher : WidgetRefresher {
     override fun requestRefresh(reason: RefreshReason) {
         requests += reason
     }
+
+    override suspend fun refreshAndAwait(reason: RefreshReason): Boolean {
+        requests += reason
+        return true
+    }
 }

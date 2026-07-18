@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** appWidgetId 0 (INVALID_APPWIDGET_ID) edits the global template. */
 @HiltViewModel(assistedFactory = ConfigureViewModel.Factory::class)
@@ -95,16 +96,25 @@ class ConfigureViewModel
             }
         }
 
+        /**
+         * Waits for the widget to actually finish refreshing before leaving the screen, so the
+         * user doesn't land back on a stale/loading widget — bounded so a slow or failing
+         * refresh can't strand them on the save button forever.
+         */
         private fun save(alsoAsTemplate: Boolean) {
             applyJob?.cancel()
             viewModelScope.launch {
+                _uiState.update { it.copy(saving = true) }
                 val config = _uiState.value.config
                 persist(config)
                 if (isInstance && alsoAsTemplate) {
                     configRepository.updateGlobal { config }
                 }
-                refresher.requestRefresh(RefreshReason.CONFIG_CHANGED)
+                withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
+                    refresher.refreshAndAwait(RefreshReason.CONFIG_CHANGED)
+                }
                 analytics.track(AnalyticsEvent.ConfigSaved)
+                _uiState.update { it.copy(saving = false) }
                 _effects.send(
                     if (isInstance) ConfigureEffect.FinishWithResult(appWidgetId) else ConfigureEffect.CloseApp,
                 )
@@ -117,12 +127,14 @@ class ConfigureViewModel
 
         private companion object {
             const val APPLY_DEBOUNCE_MS = 400L
+            const val REFRESH_TIMEOUT_MS = 8_000L
         }
     }
 
 @Immutable
 data class ConfigureUiState(
     val loading: Boolean = true,
+    val saving: Boolean = false,
     val isInstance: Boolean = false,
     val config: WidgetConfig = WidgetConfig(),
 )
