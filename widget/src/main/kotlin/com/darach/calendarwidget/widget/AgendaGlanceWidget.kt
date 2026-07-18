@@ -114,27 +114,47 @@ class AgendaGlanceWidget : GlanceAppWidget() {
     private fun previewState(): WidgetRenderState {
         val zone = java.time.ZoneId.systemDefault()
         val today = LocalDate.now()
+        val tomorrow = today.plusDays(1)
 
         fun event(
             title: String,
+            day: LocalDate,
             hour: Int,
-            location: String?,
+            color: Int,
+            allDay: Boolean = false,
         ) = CalendarEvent(
-            eventId = hour.toLong(),
+            eventId = "$day$hour".hashCode().toLong(),
             title = title,
-            location = location,
-            startsAt = today.atTime(hour, 0).atZone(zone).toInstant(),
-            endsAt = today.atTime(hour + 1, 0).atZone(zone).toInstant(),
-            isAllDay = false,
-            color = 0xFF2E9E8F.toInt(),
+            location = null,
+            startsAt = if (allDay) day.atStartOfDay(zone).toInstant() else day.atTime(hour, 0).atZone(zone).toInstant(),
+            endsAt =
+                if (allDay) {
+                    day.plusDays(1).atStartOfDay(zone).toInstant()
+                } else {
+                    day.atTime(hour + 1, 0).atZone(zone).toInstant()
+                },
+            isAllDay = allDay,
+            color = color,
             calendarId = 1,
             selfAttendeeStatus = AttendeeStatus.ACCEPTED,
         )
         return WidgetRenderState(
             days =
                 listOf(
-                    AgendaDay(today, listOf(event("Morning standup", 9, null), event("Lunch", 13, "Café"))),
-                    AgendaDay(today.plusDays(1), listOf(event("Gym", 18, null))),
+                    AgendaDay(
+                        today,
+                        listOf(
+                            event("Mum's birthday", today, hour = 0, color = PREVIEW_PURPLE, allDay = true),
+                            event("BBQ at Alex's", today, hour = 16, color = PREVIEW_BLUE),
+                        ),
+                    ),
+                    AgendaDay(
+                        tomorrow,
+                        listOf(
+                            event("Sunday roast", tomorrow, hour = 13, color = PREVIEW_PURPLE),
+                            event("Walk the dog", tomorrow, hour = 17, color = PREVIEW_BLUE),
+                        ),
+                    ),
                 ),
             config = WidgetConfig(),
             today = today,
@@ -150,5 +170,7 @@ class AgendaGlanceWidget : GlanceAppWidget() {
         val COMPACT = DpSize(180.dp, 110.dp)
         val WIDE = DpSize(270.dp, 110.dp)
         val TALL = DpSize(270.dp, 280.dp)
+        val PREVIEW_PURPLE = 0xFF8E44AD.toInt()
+        val PREVIEW_BLUE = 0xFF4285F4.toInt()
     }
 }
