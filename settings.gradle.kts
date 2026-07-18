@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -30,4 +31,14 @@ plugins {
 }
 
 rootProject.name = "Calendar Agenda Widget"
+
 include(":app")
+include(":widget")
+include(":feature:settings")
+include(":feature:calendars")
+include(":feature:about")
+include(":core:model")
+include(":core:common")
+include(":core:domain")
+include(":core:data")
+include(":core:designsystem")
