@@ -77,4 +77,42 @@ class AgendaFormattersTest {
         assertEquals("Ongoing", AgendaFormatters.startTimeLabel(e, day.plusDays(1), london, true))
         assertEquals("Ongoing", AgendaFormatters.startTimeLabel(e, day.plusDays(2), london, true))
     }
+
+    @Test
+    fun `timeLabel omits end time unless showEndTime is on`() {
+        val e = event(at(day, 9), at(day, 10, 15))
+        assertEquals("09:00", AgendaFormatters.timeLabel(e, day, london, true, showEndTime = false))
+        assertEquals("09:00 - 10:15", AgendaFormatters.timeLabel(e, day, london, true, showEndTime = true))
+    }
+
+    @Test
+    fun `timeLabel with showEndTime falls back for all-day and ongoing events`() {
+        val allDay = event(at(day, 0), at(day.plusDays(1), 0), allDay = true)
+        assertEquals("All day", AgendaFormatters.timeLabel(allDay, day, london, true, showEndTime = true))
+
+        val multiDay = event(at(day, 22), at(day.plusDays(2), 2))
+        assertEquals(
+            "Ongoing",
+            AgendaFormatters.timeLabel(multiDay, day.plusDays(1), london, true, showEndTime = true),
+        )
+    }
+
+    @Test
+    fun `durationLabel formats minutes, hours, half-hours, and mixed`() {
+        assertEquals("50mins", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 9, 50)), day, london))
+        assertEquals("1min", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 9, 1)), day, london))
+        assertEquals("1hr", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 10)), day, london))
+        assertEquals("2hrs", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 11)), day, london))
+        assertEquals("2h30m", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 11, 30)), day, london))
+        assertEquals("1h15m", AgendaFormatters.durationLabel(event(at(day, 9), at(day, 10, 15)), day, london))
+    }
+
+    @Test
+    fun `durationLabel is null for all-day and ongoing multi-day events`() {
+        val allDay = event(at(day, 0), at(day.plusDays(1), 0), allDay = true)
+        assertEquals(null, AgendaFormatters.durationLabel(allDay, day, london))
+
+        val multiDay = event(at(day, 22), at(day.plusDays(2), 2))
+        assertEquals(null, AgendaFormatters.durationLabel(multiDay, day.plusDays(1), london))
+    }
 }

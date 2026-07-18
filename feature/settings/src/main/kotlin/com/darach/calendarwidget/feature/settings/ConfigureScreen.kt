@@ -233,6 +233,18 @@ private fun ConfigForm(
                 onConfigChanged(config.copy(weekStartOverride = value))
             },
         )
+        PreferenceSwitchRow(
+            title = "Show end time",
+            subtitle = "e.g. 09:00 - 10:00 instead of just 09:00",
+            checked = config.showEndTime,
+            onCheckedChange = { onConfigChanged(config.copy(showEndTime = it)) },
+        )
+        PreferenceSwitchRow(
+            title = "Show duration chip",
+            subtitle = "A small badge like 1hr or 50mins next to the time",
+            checked = config.showDurationChip,
+            onCheckedChange = { onConfigChanged(config.copy(showDurationChip = it)) },
+        )
     }
 }
 
