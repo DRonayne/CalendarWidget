@@ -1,0 +1,48 @@
+name: Release APK
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-signed-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore signing keystore
+        if: env.KEYSTORE_B64 != ''
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Restore google-services.json
+        if: env.GOOGLE_SERVICES_JSON != ''
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      - name: Build signed release APK
+        env:
+          CALENDARWIDGET_STORE_FILE: ${{ runner.temp }}/release.jks
+          CALENDARWIDGET_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          CALENDARWIDGET_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CALENDARWIDGET_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease
+
+      - name: Attach APK to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk calendar-agenda-widget-${{ github.event.release.tag_name }}.apk
+          gh release upload "${{ github.event.release.tag_name }}" calendar-agenda-widget-${{ github.event.release.tag_name }}.apk

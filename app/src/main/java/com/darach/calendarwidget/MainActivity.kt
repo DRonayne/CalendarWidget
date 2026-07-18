@@ -14,6 +14,7 @@ import androidx.navigation3.runtime.NavKey
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
 import com.darach.calendarwidget.core.designsystem.theme.CalendarWidgetTheme
+import com.darach.calendarwidget.firebase.RemoteConfigFeatureFlags
 import com.darach.calendarwidget.widget.observer.CalendarChangeObserver
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -25,6 +26,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var calendarChangeObserver: CalendarChangeObserver
+
+    @Inject
+    lateinit var remoteConfigFlags: RemoteConfigFeatureFlags
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +68,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        remoteConfigFlags.fetchOnAppOpen()
         refresher.requestRefresh(RefreshReason.APP_OPENED)
     }
 

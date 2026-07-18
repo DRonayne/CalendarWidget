@@ -6,6 +6,7 @@ import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository
 import com.darach.calendarwidget.core.data.repository.CalendarRepository
 import com.darach.calendarwidget.core.data.snapshot.SnapshotRepository
