@@ -14,7 +14,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -114,15 +113,6 @@ private fun SaveBar(
                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
             } else {
                 Text(if (state.isInstance) "Save widget" else "Save")
-            }
-        }
-        if (state.isInstance) {
-            TextButton(
-                onClick = { onEvent(ConfigureEvent.SaveAsDefaultClicked) },
-                enabled = !state.saving,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Save and make default")
             }
         }
     }
