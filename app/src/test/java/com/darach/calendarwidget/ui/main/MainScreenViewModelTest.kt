@@ -10,16 +10,18 @@ import org.junit.jupiter.api.Test
 
 class MainScreenViewModelTest {
     @Test
-    fun uiState_initiallyLoading() = runTest {
-        val viewModel = MainScreenViewModel(FakeMyModelRepository())
-        assertEquals(MainScreenUiState.Loading, viewModel.uiState.first())
-    }
+    fun uiState_initiallyLoading() =
+        runTest {
+            val viewModel = MainScreenViewModel(FakeMyModelRepository())
+            assertEquals(MainScreenUiState.Loading, viewModel.uiState.first())
+        }
 
     @Test
-    fun uiState_onItemSaved_isDisplayed() = runTest {
-        val viewModel = MainScreenViewModel(FakeMyModelRepository())
-        assertEquals(MainScreenUiState.Loading, viewModel.uiState.first())
-    }
+    fun uiState_onItemSaved_isDisplayed() =
+        runTest {
+            val viewModel = MainScreenViewModel(FakeMyModelRepository())
+            assertEquals(MainScreenUiState.Loading, viewModel.uiState.first())
+        }
 }
 
 private class FakeMyModelRepository : DataRepository {

@@ -7,4 +7,20 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.kover)
+}
+
+// Aggregated coverage report across every module (`:koverHtmlReport` / `:koverXmlReport`).
+dependencies {
+    kover(project(":app"))
+    kover(project(":widget"))
+    kover(project(":feature:settings"))
+    kover(project(":feature:calendars"))
+    kover(project(":feature:about"))
+    kover(project(":core:model"))
+    kover(project(":core:common"))
+    kover(project(":core:domain"))
+    kover(project(":core:data"))
+    kover(project(":core:designsystem"))
+    kover(project(":conformance"))
 }

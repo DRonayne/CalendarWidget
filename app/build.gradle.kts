@@ -2,6 +2,11 @@ plugins {
     id("calendarwidget.android.application.compose")
     id("calendarwidget.hilt")
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.dependency.guard)
+}
+
+dependencyGuard {
+    configuration("releaseRuntimeClasspath")
 }
 
 android {
