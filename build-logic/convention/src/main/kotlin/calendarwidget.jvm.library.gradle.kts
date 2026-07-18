@@ -2,6 +2,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    id("calendarwidget.quality")
 }
 
 val libs = the<LibrariesForLibs>()
