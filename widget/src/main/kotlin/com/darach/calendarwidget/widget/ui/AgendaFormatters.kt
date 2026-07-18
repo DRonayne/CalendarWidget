@@ -67,17 +67,15 @@ internal object AgendaFormatters {
         day: LocalDate,
         zone: ZoneId,
     ): String? {
-        if (event.isAllDay) return null
-        if (event.startsAt.atZone(zone).toLocalDate() != day) return null
+        if (event.isAllDay || event.startsAt.atZone(zone).toLocalDate() != day) return null
         val minutes = Duration.between(event.startsAt, event.endsAt).toMinutes()
         if (minutes <= 0) return null
-        if (minutes < MINUTES_PER_HOUR) return "${minutes}min${if (minutes == 1L) "" else "s"}"
         val hours = minutes / MINUTES_PER_HOUR
         val remainder = minutes % MINUTES_PER_HOUR
-        return if (remainder == 0L) {
-            "${hours}hr${if (hours == 1L) "" else "s"}"
-        } else {
-            "${hours}h${remainder}m"
+        return when {
+            minutes < MINUTES_PER_HOUR -> "${minutes}min${if (minutes == 1L) "" else "s"}"
+            remainder == 0L -> "${hours}hr${if (hours == 1L) "" else "s"}"
+            else -> "${hours}h${remainder}m"
         }
     }
 }
