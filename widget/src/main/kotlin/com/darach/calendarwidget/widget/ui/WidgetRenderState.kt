@@ -1,5 +1,6 @@
 package com.darach.calendarwidget.widget.ui
 
+import android.graphics.Bitmap
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.WidgetConfig
 import java.time.LocalDate
@@ -17,4 +18,6 @@ data class WidgetRenderState(
     val use24Hour: Boolean,
     val packageName: String,
     val hasCalendarPermission: Boolean,
+    val avatars: Map<String, Bitmap> = emptyMap(),
+    val snapScrollEnabled: Boolean = false,
 )

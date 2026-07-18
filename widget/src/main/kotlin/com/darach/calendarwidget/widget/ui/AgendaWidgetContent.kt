@@ -1,16 +1,21 @@
 package com.darach.calendarwidget.widget.ui
 
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.VerticalScrollMode
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -21,6 +26,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -32,6 +38,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private const val OPAQUE_THRESHOLD = 0.99f
+private const val SNAP_SCROLL_MIN_SDK = 37
 
 @Composable
 fun AgendaWidget(state: WidgetRenderState) {
@@ -142,7 +149,14 @@ private fun AgendaList(
     state: WidgetRenderState,
     scale: Float,
 ) {
-    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+    val snapScroll = state.snapScrollEnabled && Build.VERSION.SDK_INT >= SNAP_SCROLL_MIN_SDK
+    val scrollMode =
+        if (snapScroll) {
+            VerticalScrollMode.SnapScrollMatchHeight(LocalSize.current.height)
+        } else {
+            VerticalScrollMode.Normal
+        }
+    LazyColumn(modifier = GlanceModifier.fillMaxSize(), verticalScrollMode = scrollMode) {
         state.days.forEach { day ->
             item { DayHeader(day, state, scale) }
             if (day.events.isEmpty()) {
@@ -225,6 +239,27 @@ private fun EventRow(
                 maxLines = 1,
             )
             SecondaryLine(event, day, state, scale)
+        }
+        AvatarStack(event, state, scale)
+    }
+}
+
+@Composable
+private fun AvatarStack(
+    event: CalendarEvent,
+    state: WidgetRenderState,
+    scale: Float,
+) {
+    if (!state.config.showAttendeePhotos) return
+    val bitmaps = event.attendeePhotoUris.mapNotNull(state.avatars::get)
+    if (bitmaps.isEmpty()) return
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        bitmaps.forEach { bitmap ->
+            Image(
+                provider = ImageProvider(bitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.size((18 * scale).dp).padding(start = 2.dp),
+            )
         }
     }
 }

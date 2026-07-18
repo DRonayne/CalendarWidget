@@ -60,7 +60,7 @@ class AgendaRefreshWorker
                 val config = store.configFor(appWidgetId)
                 val window = AgendaWindow.from(config, today)
                 calendarRepository
-                    .events(window, zone, config.hiddenCalendarIds, config.hideDeclined)
+                    .events(window, zone, config.hiddenCalendarIds, config.hideDeclined, config.showAttendeePhotos)
                     .onSuccess { events ->
                         val days = buildAgenda(events, window, zone, config.emptyDayBehavior)
                         snapshotRepository.put(appWidgetId, AgendaSnapshot(generatedAt = now, days = days))

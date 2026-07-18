@@ -26,6 +26,14 @@ spotless {
 
 kover {
     reports {
+        filters {
+            excludes {
+                // DI wiring and Hilt/Dagger generated code carry no logic signal.
+                packages("*.di")
+                classes("*_Factory", "*_HiltModules*", "*Hilt_*", "*_Impl")
+                annotatedBy("dagger.Module")
+            }
+        }
         verify {
             rule("line coverage ratchet") {
                 // Ratchet: each module declares its floor via `kover.min.line`

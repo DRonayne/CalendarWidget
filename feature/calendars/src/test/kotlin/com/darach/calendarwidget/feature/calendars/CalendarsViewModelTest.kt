@@ -142,6 +142,7 @@ private class FakeCalendarRepository(
         zone: ZoneId,
         hiddenCalendarIds: Set<Long>,
         hideDeclined: Boolean,
+        includeAttendeePhotos: Boolean,
     ): Result<List<CalendarEvent>> = Result.success(emptyList())
 
     override suspend fun calendars(): Result<List<CalendarInfo>> =

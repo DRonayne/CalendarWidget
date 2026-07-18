@@ -19,6 +19,7 @@ class CalendarRepositoryImpl
     @Inject
     constructor(
         private val contentResolver: ContentResolver,
+        private val attendeePhotoResolver: AttendeePhotoResolver,
         @param:Dispatcher(CwDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : CalendarRepository {
         override suspend fun events(
@@ -26,11 +27,13 @@ class CalendarRepositoryImpl
             zone: ZoneId,
             hiddenCalendarIds: Set<Long>,
             hideDeclined: Boolean,
+            includeAttendeePhotos: Boolean,
         ): Result<List<CalendarEvent>> =
             withContext(ioDispatcher) {
                 safeProviderCall {
                     val selection = buildSelection(hiddenCalendarIds, hideDeclined)
-                    readInstances(instancesUri(window, zone), selection).map(InstanceRow::toCalendarEvent)
+                    val events = readInstances(instancesUri(window, zone), selection).map(InstanceRow::toCalendarEvent)
+                    if (includeAttendeePhotos) attachAttendeePhotos(events) else events
                 }
             }
 
@@ -59,6 +62,14 @@ class CalendarRepositoryImpl
                 .let { ContentUris.appendId(it, beginMillis) }
                 .let { ContentUris.appendId(it, endMillis) }
                 .build()
+        }
+
+        private fun attachAttendeePhotos(events: List<CalendarEvent>): List<CalendarEvent> {
+            val photos = attendeePhotoResolver.photosByEvent(events.map(CalendarEvent::eventId).distinct())
+            if (photos.isEmpty()) return events
+            return events.map { event ->
+                photos[event.eventId]?.let { event.copy(attendeePhotoUris = it) } ?: event
+            }
         }
 
         private fun buildSelection(

@@ -22,6 +22,8 @@ data class CalendarEvent(
     val color: Int,
     val calendarId: Long,
     val selfAttendeeStatus: AttendeeStatus,
+    /** Contact photo thumbnail URIs for up to a few attendees (needs READ_CONTACTS). */
+    val attendeePhotoUris: List<String> = emptyList(),
 )
 
 @Serializable
