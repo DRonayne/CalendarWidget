@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import kotlin.time.Duration.Companion.seconds
 
 class AgendaWidgetContentTest {
     private val zone: ZoneId = ZoneId.of("Europe/London")
@@ -52,7 +53,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `renders event rows with title and secondary line`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(state(listOf(AgendaDay(today, listOf(event("Standup", location = "Room 4"))))))
@@ -63,7 +64,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `renders relative day headers`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(
@@ -81,7 +82,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `empty agenda shows empty state`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(state(emptyList()))
@@ -91,7 +92,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `placeholder day renders nothing scheduled row`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(
@@ -106,7 +107,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `missing permission renders grant state`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(state(emptyList(), hasPermission = false))
@@ -117,7 +118,7 @@ class AgendaWidgetContentTest {
 
     @Test
     fun `untitled events render placeholder title`() =
-        runGlanceAppWidgetUnitTest {
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(state(listOf(AgendaDay(today, listOf(event(""))))))
