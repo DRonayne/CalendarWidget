@@ -31,12 +31,17 @@ class CalendarChangeObserver
                 }
             }
 
+        @Volatile
+        private var registered = false
+
         fun register() {
+            if (registered) return
             val granted =
                 context.checkSelfPermission(Manifest.permission.READ_CALENDAR) ==
                     PackageManager.PERMISSION_GRANTED
             if (granted) {
                 context.contentResolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
+                registered = true
             }
         }
     }
