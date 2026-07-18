@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "semanticCommits": "enabled",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Toolchain (AGP, Kotlin, KSP, Gradle) moves in a quarterly window",
+      "groupName": "toolchain (quarterly window)",
+      "matchPackagePatterns": [
+        "^com\\.android\\.tools",
+        "^org\\.jetbrains\\.kotlin",
+        "^com\\.google\\.devtools\\.ksp",
+        "^gradle$"
+      ],
+      "schedule": ["every 3 months on the first day of the month"]
+    },
+    {
+      "description": "Library patches/minors flow continuously, grouped weekly",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "androidx + libraries (weekly)",
+      "schedule": ["before 6am on monday"]
+    }
+  ]
+}
