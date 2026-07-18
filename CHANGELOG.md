@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0-alpha02](https://github.com/DRonayne/CalendarWidget/compare/v1.0.0-alpha02...v1.1.0-alpha02) (2026-07-18)
+## [1.0.0-alpha03](https://github.com/DRonayne/CalendarWidget/compare/v1.0.0-alpha02...v1.0.0-alpha03) (2026-07-18)
 
 
 ### Features
