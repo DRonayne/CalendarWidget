@@ -68,11 +68,7 @@ class ConfigureViewModel
                 }
 
                 ConfigureEvent.SaveClicked -> {
-                    save(alsoAsTemplate = false)
-                }
-
-                ConfigureEvent.SaveAsDefaultClicked -> {
-                    save(alsoAsTemplate = true)
+                    save()
                 }
             }
         }
@@ -99,15 +95,17 @@ class ConfigureViewModel
         /**
          * Waits for the widget to actually finish refreshing before leaving the screen, so the
          * user doesn't land back on a stale/loading widget — bounded so a slow or failing
-         * refresh can't strand them on the save button forever.
+         * refresh can't strand them on the save button forever. Saving an instance always also
+         * updates the global template, so there's one save action and it always sticks as the
+         * default for new widgets too.
          */
-        private fun save(alsoAsTemplate: Boolean) {
+        private fun save() {
             applyJob?.cancel()
             viewModelScope.launch {
                 _uiState.update { it.copy(saving = true) }
                 val config = _uiState.value.config
                 persist(config)
-                if (isInstance && alsoAsTemplate) {
+                if (isInstance) {
                     configRepository.updateGlobal { config }
                 }
                 withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
@@ -147,8 +145,6 @@ sealed interface ConfigureEvent {
     data object CalendarsClicked : ConfigureEvent
 
     data object SaveClicked : ConfigureEvent
-
-    data object SaveAsDefaultClicked : ConfigureEvent
 }
 
 sealed interface ConfigureEffect {
