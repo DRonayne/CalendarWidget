@@ -6,13 +6,12 @@
 
 </div>
 
-<div align="center">
+<img src="docs/assets/widget-screenshot.png" width="100%" alt="Screenshot of the widget on a home screen showing an agenda of upcoming events">
 
-<img src="docs/assets/widget-screenshot.png" width="600" alt="Screenshot of the widget on a home screen showing an agenda of upcoming events">
-
-</div>
+<br><br>
 
 A simple calendar agenda widget for Android. A glanceable timeline of your upcoming events, pulled in from your calendar(s).
+
 
 It's a remake of an older agenda widget I used for years that's not supported on Android 17+.
 
