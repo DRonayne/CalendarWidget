@@ -16,6 +16,3 @@ data class ConfigureRoute(
 data class CalendarsRoute(
     val appWidgetId: Int,
 ) : NavKey
-
-@Serializable
-data object AboutRoute : NavKey

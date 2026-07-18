@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
         }
         val startRoute: NavKey =
             if (configureWidgetId != null) ConfigureRoute(configureWidgetId) else SettingsRoute
-        val versionName = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
 
         setContent {
             CalendarWidgetTheme {
@@ -54,7 +53,6 @@ class MainActivity : ComponentActivity() {
                     ) {
                         MainNavigation(
                             startRoute = startRoute,
-                            versionName = versionName,
                             onFinishConfigure = { appWidgetId ->
                                 setResult(RESULT_OK, resultIntent(appWidgetId))
                                 finish()

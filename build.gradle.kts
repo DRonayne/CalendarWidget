@@ -20,7 +20,6 @@ dependencies {
     kover(project(":widget"))
     kover(project(":feature:settings"))
     kover(project(":feature:calendars"))
-    kover(project(":feature:about"))
     kover(project(":core:model"))
     kover(project(":core:common"))
     kover(project(":core:domain"))

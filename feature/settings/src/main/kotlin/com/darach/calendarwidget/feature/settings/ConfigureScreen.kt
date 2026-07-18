@@ -41,7 +41,6 @@ import kotlin.math.roundToInt
 fun ConfigureScreen(
     appWidgetId: Int,
     onOpenCalendars: (Int) -> Unit,
-    onOpenAbout: () -> Unit,
     onFinishWithResult: (Int) -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
@@ -56,7 +55,6 @@ fun ConfigureScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is ConfigureEffect.OpenCalendars -> onOpenCalendars(effect.appWidgetId)
-                ConfigureEffect.OpenAbout -> onOpenAbout()
                 is ConfigureEffect.FinishWithResult -> onFinishWithResult(effect.appWidgetId)
                 ConfigureEffect.CloseApp -> onCloseApp()
             }
@@ -81,16 +79,7 @@ fun ConfigureContent(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(if (state.isInstance) "Widget settings" else "Default widget settings") },
-                actions = {
-                    if (!state.isInstance) {
-                        IconButton(onClick = { onEvent(ConfigureEvent.AboutClicked) }) {
-                            Text("i", style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-                },
-            )
+            TopAppBar(title = { Text("Widget settings") })
         },
         bottomBar = {
             SaveBar(state = state, onEvent = onEvent)

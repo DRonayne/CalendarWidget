@@ -123,6 +123,72 @@ class ConfigureViewModelTest {
         }
 
     @Test
+    fun `adjusting a setting applies it to the widget after the debounce`() =
+        runTest(dispatcher) {
+            val vm = viewModel(appWidgetId = 7)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            vm.onEvent(
+                ConfigureEvent.ConfigChanged(
+                    vm.uiState.value.config
+                        .copy(daysAhead = 5),
+                ),
+            )
+            dispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(5, configs.current().configFor(7).daysAhead)
+            assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
+        }
+
+    @Test
+    fun `rapid adjustments coalesce into one apply with the latest value`() =
+        runTest(dispatcher) {
+            val vm = viewModel(appWidgetId = 7)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            vm.onEvent(
+                ConfigureEvent.ConfigChanged(
+                    vm.uiState.value.config
+                        .copy(daysAhead = 5),
+                ),
+            )
+            vm.onEvent(
+                ConfigureEvent.ConfigChanged(
+                    vm.uiState.value.config
+                        .copy(daysAhead = 9),
+                ),
+            )
+            vm.onEvent(
+                ConfigureEvent.ConfigChanged(
+                    vm.uiState.value.config
+                        .copy(daysAhead = 21),
+                ),
+            )
+            dispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(21, configs.current().configFor(7).daysAhead)
+            assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
+        }
+
+    @Test
+    fun `global editor adjustments apply to the template live`() =
+        runTest(dispatcher) {
+            val vm = viewModel(appWidgetId = 0)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            vm.onEvent(
+                ConfigureEvent.ConfigChanged(
+                    vm.uiState.value.config
+                        .copy(includeYesterday = true),
+                ),
+            )
+            dispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(configs.current().global.includeYesterday)
+            assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
+        }
+
+    @Test
     fun `calendars click emits navigation effect with own id`() =
         runTest(dispatcher) {
             val vm = viewModel(appWidgetId = 7)

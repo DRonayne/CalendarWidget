@@ -5,7 +5,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.darach.calendarwidget.feature.about.AboutScreen
 import com.darach.calendarwidget.feature.calendars.CalendarsScreen
 import com.darach.calendarwidget.feature.settings.ConfigureScreen
 
@@ -16,7 +15,6 @@ import com.darach.calendarwidget.feature.settings.ConfigureScreen
 @Composable
 fun MainNavigation(
     startRoute: NavKey,
-    versionName: String,
     onFinishConfigure: (Int) -> Unit,
     onCloseApp: () -> Unit,
 ) {
@@ -31,7 +29,6 @@ fun MainNavigation(
                     ConfigureScreen(
                         appWidgetId = 0,
                         onOpenCalendars = { backStack.add(CalendarsRoute(it)) },
-                        onOpenAbout = { backStack.add(AboutRoute) },
                         onFinishWithResult = {},
                         onCloseApp = onCloseApp,
                     )
@@ -40,16 +37,12 @@ fun MainNavigation(
                     ConfigureScreen(
                         appWidgetId = route.appWidgetId,
                         onOpenCalendars = { backStack.add(CalendarsRoute(it)) },
-                        onOpenAbout = { backStack.add(AboutRoute) },
                         onFinishWithResult = onFinishConfigure,
                         onCloseApp = onCloseApp,
                     )
                 }
                 entry<CalendarsRoute> { route ->
                     CalendarsScreen(appWidgetId = route.appWidgetId)
-                }
-                entry<AboutRoute> {
-                    AboutScreen(versionName = versionName)
                 }
             },
     )
