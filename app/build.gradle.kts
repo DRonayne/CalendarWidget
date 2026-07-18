@@ -84,7 +84,6 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:domain"))
     implementation(project(":core:model"))
-    implementation(project(":feature:about"))
     implementation(project(":feature:calendars"))
     implementation(project(":feature:settings"))
     implementation(project(":widget"))

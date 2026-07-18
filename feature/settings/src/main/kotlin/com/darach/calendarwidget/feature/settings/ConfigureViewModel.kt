@@ -13,7 +13,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,23 +53,54 @@ class ConfigureViewModel
             }
         }
 
+        private var applyJob: Job? = null
+
         fun onEvent(event: ConfigureEvent) {
             when (event) {
-                is ConfigureEvent.ConfigChanged -> _uiState.update { it.copy(config = event.config) }
-                ConfigureEvent.CalendarsClicked -> send(ConfigureEffect.OpenCalendars(appWidgetId))
-                ConfigureEvent.AboutClicked -> send(ConfigureEffect.OpenAbout)
-                ConfigureEvent.SaveClicked -> save(alsoAsTemplate = false)
-                ConfigureEvent.SaveAsDefaultClicked -> save(alsoAsTemplate = true)
+                is ConfigureEvent.ConfigChanged -> {
+                    _uiState.update { it.copy(config = event.config) }
+                    applyLive(event.config)
+                }
+
+                ConfigureEvent.CalendarsClicked -> {
+                    send(ConfigureEffect.OpenCalendars(appWidgetId))
+                }
+
+                ConfigureEvent.SaveClicked -> {
+                    save(alsoAsTemplate = false)
+                }
+
+                ConfigureEvent.SaveAsDefaultClicked -> {
+                    save(alsoAsTemplate = true)
+                }
+            }
+        }
+
+        /** Every adjustment hits the widget immediately; debounced so slider drags coalesce. */
+        private fun applyLive(config: WidgetConfig) {
+            applyJob?.cancel()
+            applyJob =
+                viewModelScope.launch {
+                    delay(APPLY_DEBOUNCE_MS)
+                    persist(config)
+                    refresher.requestRefresh(RefreshReason.CONFIG_CHANGED)
+                }
+        }
+
+        private suspend fun persist(config: WidgetConfig) {
+            if (isInstance) {
+                configRepository.setFor(appWidgetId, config)
+            } else {
+                configRepository.updateGlobal { config }
             }
         }
 
         private fun save(alsoAsTemplate: Boolean) {
+            applyJob?.cancel()
             viewModelScope.launch {
                 val config = _uiState.value.config
-                if (isInstance) {
-                    configRepository.setFor(appWidgetId, config)
-                }
-                if (!isInstance || alsoAsTemplate) {
+                persist(config)
+                if (isInstance && alsoAsTemplate) {
                     configRepository.updateGlobal { config }
                 }
                 refresher.requestRefresh(RefreshReason.CONFIG_CHANGED)
@@ -80,6 +113,10 @@ class ConfigureViewModel
 
         private fun send(effect: ConfigureEffect) {
             viewModelScope.launch { _effects.send(effect) }
+        }
+
+        private companion object {
+            const val APPLY_DEBOUNCE_MS = 400L
         }
     }
 
@@ -97,8 +134,6 @@ sealed interface ConfigureEvent {
 
     data object CalendarsClicked : ConfigureEvent
 
-    data object AboutClicked : ConfigureEvent
-
     data object SaveClicked : ConfigureEvent
 
     data object SaveAsDefaultClicked : ConfigureEvent
@@ -108,8 +143,6 @@ sealed interface ConfigureEffect {
     data class OpenCalendars(
         val appWidgetId: Int,
     ) : ConfigureEffect
-
-    data object OpenAbout : ConfigureEffect
 
     data class FinishWithResult(
         val appWidgetId: Int,
