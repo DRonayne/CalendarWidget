@@ -8,7 +8,7 @@
 
 <img src="docs/assets/widget-screenshot.png" width="100%" alt="Screenshot of the widget on a home screen showing an agenda of upcoming events">
 
-<br><br>
+<br>
 
 A simple calendar agenda widget for Android. A glanceable timeline of your upcoming events, pulled in from your calendar(s).
 
