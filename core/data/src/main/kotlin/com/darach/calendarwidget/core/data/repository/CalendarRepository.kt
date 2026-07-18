@@ -19,6 +19,7 @@ interface CalendarRepository {
         zone: ZoneId,
         hiddenCalendarIds: Set<Long>,
         hideDeclined: Boolean,
+        includeAttendeePhotos: Boolean = false,
     ): Result<List<CalendarEvent>>
 
     /** All calendars on the device, for the selection screen. */

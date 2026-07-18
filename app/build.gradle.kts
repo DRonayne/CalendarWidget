@@ -3,6 +3,7 @@ plugins {
     id("calendarwidget.hilt")
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dependency.guard)
+    alias(libs.plugins.baselineprofile)
 }
 
 dependencyGuard {
@@ -51,7 +52,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.work.runtime.ktx)
+    baselineProfile(project(":baselineprofile"))
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.lifecycle.runtime.compose)
