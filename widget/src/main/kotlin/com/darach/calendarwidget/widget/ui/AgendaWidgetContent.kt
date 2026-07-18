@@ -37,7 +37,6 @@ import androidx.glance.unit.ColorProvider
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.CalendarEvent
 import com.darach.calendarwidget.core.model.EmptyDayBehavior
-import com.darach.calendarwidget.widget.R
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -304,7 +303,7 @@ private fun TimelineIcon(
             contentAlignment = Alignment.Center,
         ) {
             Image(
-                provider = ImageProvider(R.drawable.ic_event),
+                provider = ImageProvider(EventIcons.forTitle(event.title)),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
                 modifier = GlanceModifier.size((ICON_GLYPH_SIZE * scale).dp),
