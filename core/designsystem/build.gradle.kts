@@ -7,5 +7,6 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.ui.text.google.fonts)
     implementation(libs.kotlinx.collections.immutable)
 }
