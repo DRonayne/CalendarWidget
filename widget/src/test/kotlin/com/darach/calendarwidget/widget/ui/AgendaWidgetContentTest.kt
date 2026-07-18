@@ -20,6 +20,7 @@ import kotlin.time.Duration.Companion.seconds
 class AgendaWidgetContentTest {
     private val zone: ZoneId = ZoneId.of("Europe/London")
     private val today = LocalDate.of(2026, 7, 20)
+    private val morning: Instant = LocalDateTime.of(today, LocalTime.of(8, 0)).atZone(zone).toInstant()
 
     private fun event(
         title: String,
@@ -41,10 +42,12 @@ class AgendaWidgetContentTest {
         days: List<AgendaDay>,
         config: WidgetConfig = WidgetConfig(),
         hasPermission: Boolean = true,
+        now: Instant = morning,
     ) = WidgetRenderState(
         days = days,
         config = config,
         today = today,
+        now = now,
         zone = zone,
         use24Hour = true,
         packageName = "com.darach.calendarwidget",
@@ -52,18 +55,18 @@ class AgendaWidgetContentTest {
     )
 
     @Test
-    fun `renders event rows with title and secondary line`() =
+    fun `renders event rows with bold title and start time line`() =
         runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
                 AgendaWidget(state(listOf(AgendaDay(today, listOf(event("Standup", location = "Room 4"))))))
             }
             onNode(hasText("Standup")).assertExists()
-            onNode(hasText("09:00 – 10:00 · Room 4")).assertExists()
+            onNode(hasText("09:00 · Room 4")).assertExists()
         }
 
     @Test
-    fun `renders relative day headers`() =
+    fun `renders day headers in timeline style`() =
         runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
             setAppWidgetSize(DpSize(270.dp, 280.dp))
             provideComposable {
@@ -76,8 +79,8 @@ class AgendaWidgetContentTest {
                     ),
                 )
             }
-            onNode(hasText("Today · 20 Jul")).assertExists()
-            onNode(hasText("Tomorrow · 21 Jul")).assertExists()
+            onNode(hasText("TODAY")).assertExists()
+            onNode(hasText("TUESDAY 21 JULY")).assertExists()
         }
 
     @Test
@@ -124,5 +127,63 @@ class AgendaWidgetContentTest {
                 AgendaWidget(state(listOf(AgendaDay(today, listOf(event(""))))))
             }
             onNode(hasText("(No title)")).assertExists()
+        }
+
+    @Test
+    fun `header shows todays date and hides add button by default`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(state(listOf(AgendaDay(today, listOf(event("A"))))))
+            }
+            onNode(hasText("Mon 20 July")).assertExists()
+            onNode(hasText("＋")).assertDoesNotExist()
+        }
+
+    @Test
+    fun `add button renders when enabled in config`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(
+                        listOf(AgendaDay(today, listOf(event("A")))),
+                        config = WidgetConfig(showAddButton = true),
+                    ),
+                )
+            }
+            onNode(hasText("＋")).assertExists()
+        }
+
+    @Test
+    fun `events whose end has passed are hidden`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(
+                        days = listOf(AgendaDay(today, listOf(event("Ended", hour = 9), event("Later", hour = 15)))),
+                        now = LocalDateTime.of(today, LocalTime.of(11, 0)).atZone(zone).toInstant(),
+                    ),
+                )
+            }
+            onNode(hasText("Ended")).assertDoesNotExist()
+            onNode(hasText("Later")).assertExists()
+        }
+
+    @Test
+    fun `day drops out entirely once all its events have passed`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(
+                        days = listOf(AgendaDay(today, listOf(event("Ended", hour = 9)))),
+                        now = LocalDateTime.of(today, LocalTime.of(23, 0)).atZone(zone).toInstant(),
+                    ),
+                )
+            }
+            onNode(hasText("Ended")).assertDoesNotExist()
+            onNode(hasText("No upcoming events")).assertExists()
         }
 }

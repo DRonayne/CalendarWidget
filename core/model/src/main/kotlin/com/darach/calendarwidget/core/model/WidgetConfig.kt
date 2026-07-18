@@ -23,9 +23,10 @@ data class WidgetConfig(
     val hideDeclined: Boolean = true,
     val hiddenCalendarIds: Set<Long> = emptySet(),
     val showAttendeePhotos: Boolean = true,
+    val showAddButton: Boolean = false,
 ) {
     companion object {
-        const val DEFAULT_DAYS_AHEAD = 7
+        const val DEFAULT_DAYS_AHEAD = 14
         const val MIN_DAYS_AHEAD = 1
         const val MAX_DAYS_AHEAD = 30
     }

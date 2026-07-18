@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
@@ -22,6 +23,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -34,11 +36,17 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.CalendarEvent
+import com.darach.calendarwidget.core.model.EmptyDayBehavior
+import com.darach.calendarwidget.widget.R
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private const val OPAQUE_THRESHOLD = 0.99f
 private const val SNAP_SCROLL_MIN_SDK = 37
+private const val HORIZONTAL_PADDING = 10
+private const val RAIL_WIDTH = 30
+private const val ICON_BADGE_SIZE = 22
+private const val ICON_GLYPH_SIZE = 12
 
 @Composable
 fun AgendaWidget(state: WidgetRenderState) {
@@ -48,8 +56,7 @@ fun AgendaWidget(state: WidgetRenderState) {
                 .fillMaxSize()
                 .appWidgetBackground()
                 .background(widgetBackground(state.config.backgroundOpacity))
-                .cornerRadius(16.dp)
-                .padding(12.dp),
+                .cornerRadius(16.dp),
     ) {
         when {
             !state.hasCalendarPermission -> PermissionMissing(state.packageName)
@@ -85,13 +92,13 @@ private fun PermissionMissing(packageName: String) {
 @Composable
 private fun Agenda(state: WidgetRenderState) {
     val scale = state.config.textScale.factor
+    val days = visibleDays(state)
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        HeaderBar(state, scale)
-        Spacer(GlanceModifier.height(8.dp))
-        if (state.days.all { it.events.isEmpty() } && state.days.isEmpty()) {
+        if (days.isEmpty()) {
+            HeaderBar(state, scale)
             EmptyAgenda(scale)
         } else {
-            AgendaList(state, scale)
+            AgendaList(days, state, scale)
         }
     }
 }
@@ -103,7 +110,10 @@ private fun HeaderBar(
 ) {
     val headline = state.today.format(DateTimeFormatter.ofPattern("EEE d MMMM", Locale.getDefault()))
     Row(
-        modifier = GlanceModifier.fillMaxWidth(),
+        modifier =
+            GlanceModifier
+                .fillMaxWidth()
+                .padding(start = (HORIZONTAL_PADDING + 4).dp, top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -126,13 +136,37 @@ private fun HeaderBar(
                         ),
                     ),
         )
-        Text(
-            text = "＋",
-            style = TextStyle(color = GlanceTheme.colors.primary, fontSize = (18 * scale).sp),
-            modifier = GlanceModifier.padding(horizontal = 8.dp).clickable(WidgetActions.newEvent()),
-        )
+        if (state.config.showAddButton) {
+            Text(
+                text = "＋",
+                style = TextStyle(color = GlanceTheme.colors.primary, fontSize = (18 * scale).sp),
+                modifier = GlanceModifier.padding(horizontal = 10.dp).clickable(WidgetActions.newEvent()),
+            )
+        }
     }
 }
+
+/** Drops events whose end has already passed, then empty days per config. */
+private fun visibleDays(state: WidgetRenderState): List<AgendaDay> =
+    state.days.mapNotNull { day ->
+        val remaining =
+            day.events.filter { event ->
+                if (event.isAllDay) !day.date.isBefore(state.today) else event.endsAt > state.now
+            }
+        when {
+            remaining.isNotEmpty() -> {
+                day.copy(events = remaining)
+            }
+
+            day.events.isEmpty() || state.config.emptyDayBehavior == EmptyDayBehavior.PLACEHOLDER -> {
+                day.copy(events = emptyList())
+            }
+
+            else -> {
+                null
+            }
+        }
+    }
 
 @Composable
 private fun EmptyAgenda(scale: Float) {
@@ -146,6 +180,7 @@ private fun EmptyAgenda(scale: Float) {
 
 @Composable
 private fun AgendaList(
+    days: List<AgendaDay>,
     state: WidgetRenderState,
     scale: Float,
 ) {
@@ -157,7 +192,8 @@ private fun AgendaList(
             VerticalScrollMode.Normal
         }
     LazyColumn(modifier = GlanceModifier.fillMaxSize(), verticalScrollMode = scrollMode) {
-        state.days.forEach { day ->
+        item { HeaderBar(state, scale) }
+        days.forEach { day ->
             item { DayHeader(day, state, scale) }
             if (day.events.isEmpty()) {
                 item { NothingScheduled(scale) }
@@ -187,7 +223,7 @@ private fun DayHeader(
         modifier =
             GlanceModifier
                 .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 2.dp)
+                .padding(start = HORIZONTAL_PADDING.dp, end = HORIZONTAL_PADDING.dp, top = 8.dp, bottom = 2.dp)
                 .clickable(
                     WidgetActions.openDay(
                         day.date
@@ -204,7 +240,7 @@ private fun NothingScheduled(scale: Float) {
     Text(
         text = "Nothing scheduled",
         style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (12 * scale).sp),
-        modifier = GlanceModifier.padding(start = 12.dp, top = 2.dp, bottom = 2.dp),
+        modifier = GlanceModifier.padding(start = (HORIZONTAL_PADDING + 12).dp, top = 2.dp, bottom = 2.dp),
     )
 }
 
@@ -219,28 +255,61 @@ private fun EventRow(
         modifier =
             GlanceModifier
                 .fillMaxWidth()
-                .padding(vertical = 3.dp)
+                .padding(horizontal = HORIZONTAL_PADDING.dp)
                 .clickable(WidgetActions.openEvent(event)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier =
-                GlanceModifier
-                    .width(4.dp)
-                    .height((30 * scale).dp)
-                    .background(ColorProvider(Color(event.color).copy(alpha = 1f)))
-                    .cornerRadius(2.dp),
-        ) {}
-        Spacer(GlanceModifier.width(8.dp))
-        Column(modifier = GlanceModifier.defaultWeight()) {
+        TimelineIcon(event, scale)
+        Spacer(GlanceModifier.width(10.dp))
+        Column(modifier = GlanceModifier.defaultWeight().padding(vertical = 5.dp)) {
             Text(
                 text = event.title.ifEmpty { "(No title)" },
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = (13 * scale).sp),
+                style =
+                    TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontSize = (13 * scale).sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 maxLines = 1,
             )
             SecondaryLine(event, day, state, scale)
         }
         AvatarStack(event, state, scale)
+    }
+}
+
+/** The timeline rail: a vertical line with the event's icon badge sitting on it. */
+@Composable
+private fun TimelineIcon(
+    event: CalendarEvent,
+    scale: Float,
+) {
+    Box(
+        modifier = GlanceModifier.width((RAIL_WIDTH * scale).dp).fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier =
+                GlanceModifier
+                    .width(2.dp)
+                    .fillMaxHeight()
+                    .background(GlanceTheme.colors.outline),
+        ) {}
+        Box(
+            modifier =
+                GlanceModifier
+                    .size((ICON_BADGE_SIZE * scale).dp)
+                    .background(ColorProvider(Color(event.color).copy(alpha = 1f)))
+                    .cornerRadius((ICON_BADGE_SIZE * scale / 2).dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_event),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
+                modifier = GlanceModifier.size((ICON_GLYPH_SIZE * scale).dp),
+            )
+        }
     }
 }
 
@@ -271,7 +340,7 @@ private fun SecondaryLine(
     state: WidgetRenderState,
     scale: Float,
 ) {
-    val time = AgendaFormatters.timeLabel(event, day.date, state.zone, state.use24Hour)
+    val time = AgendaFormatters.startTimeLabel(event, day.date, state.zone, state.use24Hour)
     val text = if (event.location != null) "$time · ${event.location}" else time
     Text(
         text = text,
