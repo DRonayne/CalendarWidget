@@ -65,7 +65,7 @@ class ConfigureViewModelTest {
         }
 
     @Test
-    fun `save for instance persists, refreshes, and finishes with result`() =
+    fun `save for instance persists, updates the template, refreshes, and finishes with result`() =
         runTest(dispatcher) {
             val vm = viewModel(appWidgetId = 7)
             dispatcher.scheduler.advanceUntilIdle()
@@ -81,6 +81,7 @@ class ConfigureViewModelTest {
                 assertEquals(ConfigureEffect.FinishWithResult(7), awaitItem())
             }
             assertEquals(10, configs.current().configFor(7).daysAhead)
+            assertEquals(10, configs.current().global.daysAhead)
             assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
             assertEquals(listOf<AnalyticsEvent>(AnalyticsEvent.ConfigSaved), analytics.events)
         }
@@ -106,26 +107,6 @@ class ConfigureViewModelTest {
                 assertEquals(ConfigureEffect.FinishWithResult(7), awaitItem())
             }
             assertFalse(vm.uiState.value.saving)
-        }
-
-    @Test
-    fun `save as default also updates the global template`() =
-        runTest(dispatcher) {
-            val vm = viewModel(appWidgetId = 7)
-            dispatcher.scheduler.advanceUntilIdle()
-
-            vm.onEvent(
-                ConfigureEvent.ConfigChanged(
-                    vm.uiState.value.config
-                        .copy(daysAhead = 21),
-                ),
-            )
-            vm.effects.test {
-                vm.onEvent(ConfigureEvent.SaveAsDefaultClicked)
-                awaitItem()
-            }
-            assertEquals(21, configs.current().global.daysAhead)
-            assertEquals(21, configs.current().configFor(7).daysAhead)
         }
 
     @Test
