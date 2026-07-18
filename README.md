@@ -10,6 +10,18 @@
 
 <br>
 
+<div align="center">
+
+[![Kotlin](https://img.shields.io/badge/Kotlin%202.3-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
+[![Material 3](https://img.shields.io/badge/Material%203-6750A4?logo=materialdesign&logoColor=white)](https://m3.material.io)
+[![API](https://img.shields.io/badge/API%2036%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions)
+[![Gradle](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white)](https://gradle.org)
+[![Release](https://img.shields.io/github/v/release/DRonayne/CalendarWidget?include_prereleases&label=Release&logo=github&labelColor=181717&color=181717)](https://github.com/DRonayne/CalendarWidget/releases/latest)
+![Fable 5](https://img.shields.io/badge/Fable%205-D97757?logo=claude&logoColor=white)
+
+</div>
+
 A simple calendar agenda widget for Android. A glanceable timeline of your upcoming events, pulled in from your calendar(s).
 
 
