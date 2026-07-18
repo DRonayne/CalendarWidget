@@ -15,9 +15,10 @@ android {
 
     defaultConfig {
         applicationId = "com.darach.calendarwidget"
-        // version.txt is owned by release-please; versionCode derives from it.
+        // version.txt is owned by release-please; versionCode derives from it
+        // (pre-release suffixes like -alpha are ignored for the code).
         val semver = rootProject.file("version.txt").readText().trim()
-        val (major, minor, patch) = semver.split('.').map(String::toInt)
+        val (major, minor, patch) = semver.substringBefore('-').split('.').map(String::toInt)
         versionCode = major * 10_000 + minor * 100 + patch
         versionName = semver
     }
@@ -26,8 +27,28 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        // Populated from ~/.gradle/gradle.properties (local) or env (CI);
+        // falls back to debug signing so unsigned environments still build.
+        val storeFilePath =
+            providers.gradleProperty("CALENDARWIDGET_STORE_FILE").orNull
+                ?: System.getenv("CALENDARWIDGET_STORE_FILE")
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = file(storeFilePath)
+                storePassword = providers.gradleProperty("CALENDARWIDGET_STORE_PASSWORD").orNull
+                    ?: System.getenv("CALENDARWIDGET_STORE_PASSWORD")
+                keyAlias = providers.gradleProperty("CALENDARWIDGET_KEY_ALIAS").orNull
+                    ?: System.getenv("CALENDARWIDGET_KEY_ALIAS")
+                keyPassword = providers.gradleProperty("CALENDARWIDGET_KEY_PASSWORD").orNull
+                    ?: System.getenv("CALENDARWIDGET_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -38,7 +59,26 @@ android {
     }
 }
 
+// Firebase activates only when the (gitignored) google-services.json is present.
+if (file("google-services.json").exists()) {
+    apply(
+        plugin =
+            libs.plugins.google.services
+                .get()
+                .pluginId,
+    )
+    apply(
+        plugin =
+            libs.plugins.firebase.crashlytics
+                .get()
+                .pluginId,
+    )
+}
+
 dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.config)
     implementation(project(":core:common"))
     implementation(project(":core:data"))
     implementation(project(":core:designsystem"))
