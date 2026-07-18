@@ -18,6 +18,8 @@ naming:
 complexity:
   LongParameterList:
     ignoreAnnotated: ['Composable']
+    # Hilt/DI constructors are legitimately wide; functions stay at the default.
+    constructorThreshold: 12
   LongMethod:
     ignoreAnnotated: ['Composable']
   TooManyFunctions:

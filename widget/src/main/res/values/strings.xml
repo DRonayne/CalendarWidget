@@ -1,0 +1,4 @@
+<resources>
+    <string name="widget_label">Agenda</string>
+    <string name="widget_description">Your upcoming events at a glance</string>
+</resources>
