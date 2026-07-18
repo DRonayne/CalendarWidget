@@ -104,7 +104,7 @@ class ConfigureViewModelTest {
         }
 
     @Test
-    fun `global editor saves template and stays open`() =
+    fun `global editor saves template and closes the app`() =
         runTest(dispatcher) {
             val vm = viewModel(appWidgetId = 0)
             dispatcher.scheduler.advanceUntilIdle()
@@ -117,7 +117,7 @@ class ConfigureViewModelTest {
             )
             vm.effects.test {
                 vm.onEvent(ConfigureEvent.SaveClicked)
-                assertEquals(ConfigureEffect.Saved, awaitItem())
+                assertEquals(ConfigureEffect.CloseApp, awaitItem())
             }
             assertTrue(configs.current().global.includeYesterday)
         }

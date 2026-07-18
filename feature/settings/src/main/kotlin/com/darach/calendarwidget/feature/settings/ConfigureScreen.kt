@@ -12,15 +12,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,6 +43,7 @@ fun ConfigureScreen(
     onOpenCalendars: (Int) -> Unit,
     onOpenAbout: () -> Unit,
     onFinishWithResult: (Int) -> Unit,
+    onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel =
@@ -53,7 +51,6 @@ fun ConfigureScreen(
             key = "configure-$appWidgetId",
         ) { factory -> factory.create(appWidgetId) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -61,7 +58,7 @@ fun ConfigureScreen(
                 is ConfigureEffect.OpenCalendars -> onOpenCalendars(effect.appWidgetId)
                 ConfigureEffect.OpenAbout -> onOpenAbout()
                 is ConfigureEffect.FinishWithResult -> onFinishWithResult(effect.appWidgetId)
-                ConfigureEffect.Saved -> snackbarHostState.showSnackbar("Saved")
+                ConfigureEffect.CloseApp -> onCloseApp()
             }
         }
     }
@@ -69,7 +66,6 @@ fun ConfigureScreen(
     ConfigureContent(
         state = state,
         onEvent = viewModel::onEvent,
-        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -81,11 +77,9 @@ fun ConfigureContent(
     state: ConfigureUiState,
     onEvent: (ConfigureEvent) -> Unit,
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isInstance) "Widget settings" else "Default widget settings") },
@@ -125,7 +119,7 @@ private fun SaveBar(
             onClick = { onEvent(ConfigureEvent.SaveClicked) },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (state.isInstance) "Save widget" else "Save defaults")
+            Text(if (state.isInstance) "Save widget" else "Save")
         }
         if (state.isInstance) {
             TextButton(
@@ -175,6 +169,12 @@ private fun ConfigForm(
             options = persistentListOf("Small", "Default", "Large"),
             selectedIndex = config.textScale.ordinal,
             onSelect = { onConfigChanged(config.copy(textScale = TextScale.entries[it])) },
+        )
+        PreferenceSwitchRow(
+            title = "Show add button",
+            subtitle = "Header shortcut to create a new event",
+            checked = config.showAddButton,
+            onCheckedChange = { onConfigChanged(config.copy(showAddButton = it)) },
         )
         PreferenceSwitchRow(
             title = "Show empty days",
@@ -247,12 +247,28 @@ private fun ConfigForm(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Widget settings", showSystemUi = true)
 @Composable
-private fun ConfigureContentPreview() {
+private fun ConfigureWidgetPreview() {
     CalendarWidgetTheme {
         ConfigureContent(
             state = ConfigureUiState(loading = false, isInstance = true),
+            onEvent = {},
+        )
+    }
+}
+
+@Preview(name = "Default settings", showSystemUi = true)
+@Composable
+private fun ConfigureDefaultsPreview() {
+    CalendarWidgetTheme {
+        ConfigureContent(
+            state =
+                ConfigureUiState(
+                    loading = false,
+                    isInstance = false,
+                    config = WidgetConfig(showAddButton = true, backgroundOpacity = 0.8f),
+                ),
             onEvent = {},
         )
     }

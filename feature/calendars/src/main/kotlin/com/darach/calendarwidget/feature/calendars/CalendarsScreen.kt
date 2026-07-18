@@ -116,7 +116,7 @@ private fun ErrorState(
     Text(message, modifier = modifier.padding(24.dp))
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Calendars", showSystemUi = true)
 @Composable
 private fun CalendarsContentPreview() {
     CalendarWidgetTheme {
@@ -128,8 +128,23 @@ private fun CalendarsContentPreview() {
                         persistentListOf(
                             CalendarRow(1, "Personal", "local", 0xFF33AA88.toInt(), true),
                             CalendarRow(2, "Work", "work@example.com", 0xFF3366CC.toInt(), false),
+                            CalendarRow(3, "Family", "shared@example.com", 0xFFE07A30.toInt(), true),
+                            CalendarRow(4, "Birthdays", "contacts", 0xFF9C4DCC.toInt(), true),
+                            CalendarRow(5, "Holidays in Ireland", "holiday@group", 0xFF2E7D32.toInt(), false),
+                            CalendarRow(6, "Sport fixtures", "sport@group", 0xFF1565C0.toInt(), true),
                         ),
                 ),
+            onToggle = { _, _ -> },
+        )
+    }
+}
+
+@Preview(name = "Calendars error", showSystemUi = true)
+@Composable
+private fun CalendarsErrorPreview() {
+    CalendarWidgetTheme {
+        CalendarsContent(
+            state = CalendarsUiState(loading = false, error = DomainError.PermissionMissing),
             onToggle = { _, _ -> },
         )
     }

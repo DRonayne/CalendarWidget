@@ -42,8 +42,8 @@ fun AboutScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "About", showSystemUi = true)
 @Composable
 private fun AboutPreview() {
-    CalendarWidgetTheme { AboutScreen(versionName = "0.1.0") }
+    CalendarWidgetTheme { AboutScreen(versionName = "1.0.0-alpha") }
 }
