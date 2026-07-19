@@ -16,7 +16,10 @@ jobs:
       # workflows (release.yml's `on: release: published`) — a GitHub Actions anti-loop
       # protection. Falls back to GITHUB_TOKEN so this still works before the PAT exists,
       # just without that downstream trigger guarantee.
-      - uses: googleapis/release-please-action@v4
+      # Pinned to an exact version: the floating v4 tag once changed versioning
+      # behavior underneath us (1.0.0-alphaNN suddenly became 1.1.0-alphaNN).
+      # Renovate proposes upgrades as visible PRs.
+      - uses: googleapis/release-please-action@v4.4.1
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

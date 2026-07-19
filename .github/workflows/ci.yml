@@ -24,6 +24,53 @@ jobs:
       - name: Static analysis, assemble, unit tests
         run: ./gradlew spotlessCheck detekt :app:assembleDebug test
 
+  # Validates the version a release-please PR proposes against the tags that
+  # actually shipped, so a versioning regression (wrong strategy, upstream
+  # behavior drift) fails the PR instead of cutting a mislabelled release.
+  release-version-guard:
+    if: github.event_name == 'pull_request' && github.head_ref == 'release-please--branches--main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check proposed version against released tags
+        run: |
+          set -euo pipefail
+          new=$(tr -d '[:space:]' < version.txt)
+          latest_tag=$(git tag --list 'v*' --sort=-creatordate | head -1)
+          latest=${latest_tag#v}
+          echo "proposed: $new — latest released: ${latest:-none}"
+          if [ -z "$latest" ]; then
+            echo "no released tags yet; nothing to check against"
+            exit 0
+          fi
+          if git rev-parse -q --verify "refs/tags/v$new" > /dev/null; then
+            echo "::error::proposed version $new is already released as v$new"
+            exit 1
+          fi
+          new_core=${new%%-*}
+          old_core=${latest%%-*}
+          if [ "$new_core" != "$old_core" ] &&
+            [ "$(printf '%s\n%s\n' "$old_core" "$new_core" | sort -V | tail -1)" != "$new_core" ]; then
+            echo "::error::proposed version $new is lower than latest release $latest"
+            exit 1
+          fi
+          new_pre=${new#"$new_core"}
+          old_pre=${latest#"$old_core"}
+          # A prerelease-to-prerelease step must advance the counter by exactly
+          # one (alpha03 -> alpha04); a missing counter counts as 1 (alpha01).
+          if [ -n "$new_pre" ] && [ -n "$old_pre" ]; then
+            new_n=$(printf '%s' "$new_pre" | grep -oE '[0-9]+$' || echo 1)
+            old_n=$(printf '%s' "$old_pre" | grep -oE '[0-9]+$' || echo 1)
+            if [ "$((10#$new_n))" -ne "$((10#$old_n + 1))" ]; then
+              echo "::error::prerelease counter must advance by exactly one: $latest -> $new"
+              exit 1
+            fi
+          fi
+          echo "version check passed"
+
   # Runs on every push to main, and on PRs labelled `full-ci`.
   full:
     name: full-ci
