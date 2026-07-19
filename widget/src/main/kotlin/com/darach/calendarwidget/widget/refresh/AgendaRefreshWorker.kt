@@ -76,8 +76,7 @@ class AgendaRefreshWorker
                                 config.hiddenCalendarIds,
                                 config.hideDeclined,
                                 config.showAttendeePhotos,
-                            )
-                            .onSuccess { events ->
+                            ).onSuccess { events ->
                                 val days = buildAgenda(events, window, zone, config.emptyDayBehavior)
                                 snapshotRepository.put(appWidgetId, AgendaSnapshot(generatedAt = now, days = days))
                                 val next = computeNextRefresh(events, now, zone)
