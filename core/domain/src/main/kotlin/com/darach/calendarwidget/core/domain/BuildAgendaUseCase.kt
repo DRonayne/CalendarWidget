@@ -27,7 +27,7 @@ class BuildAgendaUseCase
         ): List<AgendaDay> {
             val buckets = window.days().associateWith { mutableListOf<CalendarEvent>() }
             for (event in events) {
-                for (day in event.localDays(zone)) {
+                for (day in event.localDays(zone, window)) {
                     buckets[day]?.add(event)
                 }
             }
@@ -41,13 +41,21 @@ class BuildAgendaUseCase
                 }.sortedBy(AgendaDay::date)
         }
 
-        /** The local dates this event occupies. */
-        private fun CalendarEvent.localDays(zone: ZoneId): List<LocalDate> {
+        /**
+         * The local dates this event occupies within [window]. Clipped to the
+         * window bounds: instance BEGIN/END carry the event's real span, so a
+         * long or malformed (far-future end) event must not enumerate every
+         * day of that span here.
+         */
+        private fun CalendarEvent.localDays(
+            zone: ZoneId,
+            window: AgendaWindow,
+        ): List<LocalDate> {
             val effectiveZone = if (isAllDay) ZoneOffset.UTC else zone
-            val firstDay = startsAt.atZone(effectiveZone).toLocalDate()
+            val firstDay = maxOf(startsAt.atZone(effectiveZone).toLocalDate(), window.start)
             // An event ending exactly at midnight does not occupy the day it ends on.
             val lastInstant = if (endsAt > startsAt) endsAt.minusMillis(1) else endsAt
-            val lastDay = lastInstant.atZone(effectiveZone).toLocalDate()
+            val lastDay = minOf(lastInstant.atZone(effectiveZone).toLocalDate(), window.endExclusive.minusDays(1))
             return generateSequence(firstDay) { it.plusDays(1) }
                 .takeWhile { !it.isAfter(lastDay) }
                 .toList()

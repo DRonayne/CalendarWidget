@@ -189,6 +189,19 @@ class BuildAgendaUseCaseTest {
     }
 
     @Test
+    fun `event spanning far beyond the window is clipped to the window days`() {
+        val day = LocalDate.of(2026, 7, 20)
+        val window = AgendaWindow(day, 3)
+        // A malformed sync entry with an effectively unbounded span must not
+        // enumerate every day between its start and end.
+        val everlasting = event(Instant.ofEpochMilli(0), Instant.ofEpochMilli(Long.MAX_VALUE))
+
+        val agenda = useCase(listOf(everlasting), window, london, EmptyDayBehavior.SKIP)
+
+        assertEquals(listOf(day, day.plusDays(1), day.plusDays(2)), agenda.map { it.date })
+    }
+
+    @Test
     fun `zero-duration event occupies exactly its start day`() {
         val day = LocalDate.of(2026, 7, 20)
         val window = AgendaWindow(day, 2)
