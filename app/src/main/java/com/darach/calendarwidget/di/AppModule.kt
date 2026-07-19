@@ -1,18 +1,17 @@
 package com.darach.calendarwidget.di
 
 import com.darach.calendarwidget.core.common.analytics.Analytics
-import com.darach.calendarwidget.core.common.analytics.NoOpAnalytics
 import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.common.flags.FeatureFlags
 import com.darach.calendarwidget.core.data.refresh.PlacedWidgets
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
 import com.darach.calendarwidget.firebase.CrashlyticsReporter
+import com.darach.calendarwidget.firebase.FirebaseAnalyticsSink
 import com.darach.calendarwidget.firebase.RemoteConfigFeatureFlags
 import com.darach.calendarwidget.widget.refresh.PlacedWidgetsImpl
 import com.darach.calendarwidget.widget.refresh.WidgetRefresherImpl
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
@@ -31,9 +30,6 @@ abstract class AppModule {
     @Binds
     abstract fun featureFlags(impl: RemoteConfigFeatureFlags): FeatureFlags
 
-    companion object {
-        // The analytics facade is real; the sink stays no-op — no vendor SDK ships.
-        @Provides
-        fun analytics(): Analytics = NoOpAnalytics
-    }
+    @Binds
+    abstract fun analytics(impl: FirebaseAnalyticsSink): Analytics
 }

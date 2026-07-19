@@ -32,6 +32,7 @@ import com.darach.calendarwidget.core.designsystem.theme.CalendarWidgetTheme
 @Composable
 fun PermissionGate(
     onGranted: () -> Unit,
+    onRequestResult: (granted: Boolean) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -44,7 +45,9 @@ fun PermissionGate(
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
         ) { results ->
-            if (results[Manifest.permission.READ_CALENDAR] == true) {
+            val calendarGranted = results[Manifest.permission.READ_CALENDAR] == true
+            onRequestResult(calendarGranted)
+            if (calendarGranted) {
                 granted = true
                 onGranted()
             }

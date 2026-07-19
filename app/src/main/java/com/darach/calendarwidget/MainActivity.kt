@@ -11,6 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
+import com.darach.calendarwidget.core.common.analytics.Analytics
+import com.darach.calendarwidget.core.common.analytics.AnalyticsEvent
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
 import com.darach.calendarwidget.core.designsystem.theme.CalendarWidgetTheme
@@ -29,6 +31,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var remoteConfigFlags: RemoteConfigFeatureFlags
+
+    @Inject
+    lateinit var analytics: Analytics
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +54,9 @@ class MainActivity : ComponentActivity() {
                         onGranted = {
                             calendarChangeObserver.register()
                             refresher.requestRefresh(RefreshReason.APP_OPENED)
+                        },
+                        onRequestResult = { granted ->
+                            analytics.track(AnalyticsEvent.CalendarPermissionResult(granted))
                         },
                     ) {
                         MainNavigation(

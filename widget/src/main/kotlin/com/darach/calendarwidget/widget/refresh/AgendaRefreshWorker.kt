@@ -6,7 +6,6 @@ import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository
 import com.darach.calendarwidget.core.data.repository.CalendarRepository
 import com.darach.calendarwidget.core.data.snapshot.SnapshotRepository
@@ -21,6 +20,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -43,7 +43,7 @@ class AgendaRefreshWorker
         private val computeNextRefresh: ComputeNextRefreshUseCase,
         private val scheduler: RefreshScheduler,
         private val refresher: WidgetRefresherImpl,
-        private val crashReporter: CrashReporter,
+        private val instrumentation: RefreshInstrumentation,
         private val clock: Clock,
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
@@ -54,6 +54,8 @@ class AgendaRefreshWorker
                 scheduler.cancel()
                 return Result.success()
             }
+
+            instrumentation.started(glanceIds.size)
 
             val store = configRepository.current()
             val zone = clock.zone
@@ -83,15 +85,21 @@ class AgendaRefreshWorker
                                 earliestBoundary = earliestBoundary?.let { minOf(it, next) } ?: next
                             }.onFailure { failure ->
                                 if (failure.domainError() is DomainError.QueryFailed) transientFailure = true
+                                instrumentation.failed(errorType(failure))
                             }
                     }
-                if (!ok) transientFailure = true
+                if (!ok) {
+                    transientFailure = true
+                    instrumentation.failed(ERROR_UNEXPECTED)
+                }
             }
 
             guarded { AgendaGlanceWidget().updateAll(applicationContext) }
 
             val fallbackMidnight = today.plusDays(1).atStartOfDay(zone).toInstant()
             scheduler.schedule(earliestBoundary ?: fallbackMidnight)
+
+            instrumentation.completed(Duration.between(now, clock.instant()), glanceIds.size)
 
             val retrying = transientFailure && runAttemptCount < MAX_RETRIES
             // Requests that arrived mid-run were dropped by KEEP; chain one
@@ -100,6 +108,15 @@ class AgendaRefreshWorker
 
             return if (retrying) Result.retry() else Result.success()
         }
+
+        /** A fixed error category for reporting — never a message. */
+        private fun errorType(failure: Throwable): String =
+            when (failure.domainError()) {
+                DomainError.PermissionMissing -> "permission_missing"
+                DomainError.ProviderUnavailable -> "provider_unavailable"
+                is DomainError.QueryFailed -> "query_failed"
+                null -> ERROR_UNEXPECTED
+            }
 
         /** Contains one step's failure so the rest of the pipeline still runs. */
         @Suppress("TooGenericExceptionCaught")
@@ -110,11 +127,12 @@ class AgendaRefreshWorker
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (unexpected: Exception) {
-                crashReporter.recordNonFatal(unexpected)
+                instrumentation.unexpected(unexpected)
                 false
             }
 
         private companion object {
             const val MAX_RETRIES = 3
+            const val ERROR_UNEXPECTED = "unexpected"
         }
     }

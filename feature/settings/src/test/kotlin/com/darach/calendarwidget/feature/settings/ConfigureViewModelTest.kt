@@ -2,6 +2,7 @@ package com.darach.calendarwidget.feature.settings
 
 import app.cash.turbine.test
 import com.darach.calendarwidget.core.common.analytics.AnalyticsEvent
+import com.darach.calendarwidget.core.common.crash.NoOpCrashReporter
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.model.WidgetConfig
 import com.darach.calendarwidget.core.model.WidgetConfigStore
@@ -45,7 +46,8 @@ class ConfigureViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(appWidgetId: Int) = ConfigureViewModel(appWidgetId, configs, refresher, analytics)
+    private fun viewModel(appWidgetId: Int) =
+        ConfigureViewModel(appWidgetId, configs, refresher, analytics, NoOpCrashReporter)
 
     @Test
     fun `instance loads its own config`() =
@@ -83,7 +85,9 @@ class ConfigureViewModelTest {
             assertEquals(10, configs.current().configFor(7).daysAhead)
             assertEquals(10, configs.current().global.daysAhead)
             assertEquals(listOf(RefreshReason.CONFIG_CHANGED), refresher.requests)
-            assertEquals(listOf<AnalyticsEvent>(AnalyticsEvent.ConfigSaved), analytics.events)
+            val saved = analytics.events.filterIsInstance<AnalyticsEvent.ConfigSaved>().single()
+            assertEquals(10, saved.daysAhead)
+            assertTrue(saved.isInstance)
         }
 
     @Test

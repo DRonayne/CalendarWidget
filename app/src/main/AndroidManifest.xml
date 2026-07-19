@@ -24,6 +24,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Privacy posture: usage analytics only. Never collect the advertising
+             ID and never allow events to feed ad personalization. -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
+
         <!-- WorkManager is configured on demand via Configuration.Provider (Hilt worker factory). -->
         <provider
             android:name="androidx.startup.InitializationProvider"
