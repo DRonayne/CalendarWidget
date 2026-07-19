@@ -4,6 +4,7 @@
     ".": {
       "release-type": "simple",
       "include-component-in-tag": false,
+      "versioning": "prerelease",
       "prerelease": true,
       "prerelease-type": "alpha"
     }
