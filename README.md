@@ -18,6 +18,8 @@
 [![API](https://img.shields.io/badge/API%2036%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions)
 [![Gradle](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white)](https://gradle.org)
 [![Release](https://img.shields.io/github/v/release/DRonayne/CalendarWidget?include_prereleases&label=Release&logo=github&labelColor=181717&color=181717)](https://github.com/DRonayne/CalendarWidget/releases/latest)
+[![Firebase](https://img.shields.io/badge/Firebase-F57C00?logo=firebase&logoColor=white)](https://firebase.google.com)
+[![Android CLI](https://img.shields.io/badge/Android%20CLI-0D2818?logo=android&logoColor=3DDC84)](https://developer.android.com/tools/agents/android-cli)
 ![Fable 5](https://img.shields.io/badge/Fable%205-D97757?logo=claude&logoColor=white)
 
 </div>
