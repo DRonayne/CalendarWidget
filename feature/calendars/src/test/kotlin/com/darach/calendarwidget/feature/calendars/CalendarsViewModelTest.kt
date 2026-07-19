@@ -1,5 +1,6 @@
 package com.darach.calendarwidget.feature.calendars
 
+import com.darach.calendarwidget.core.common.crash.NoOpCrashReporter
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
@@ -55,7 +56,7 @@ class CalendarsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(id: Int = 7) = CalendarsViewModel(id, calendars, configs, refresher)
+    private fun viewModel(id: Int = 7) = CalendarsViewModel(id, calendars, configs, refresher, NoOpCrashReporter)
 
     @Test
     fun `loads calendars with visibility from config`() =

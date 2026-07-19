@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darach.calendarwidget.core.common.analytics.Analytics
 import com.darach.calendarwidget.core.common.analytics.AnalyticsEvent
+import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
@@ -33,6 +34,7 @@ class ConfigureViewModel
         private val configRepository: WidgetConfigRepository,
         private val refresher: WidgetRefresher,
         private val analytics: Analytics,
+        private val crashReporter: CrashReporter,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
@@ -108,10 +110,15 @@ class ConfigureViewModel
                 if (isInstance) {
                     configRepository.updateGlobal { config }
                 }
-                withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
-                    refresher.refreshAndAwait(RefreshReason.CONFIG_CHANGED)
+                val refreshed =
+                    withTimeoutOrNull(REFRESH_TIMEOUT_MS) {
+                        refresher.refreshAndAwait(RefreshReason.CONFIG_CHANGED)
+                    }
+                if (refreshed == null) {
+                    crashReporter.log("config save: refresh await timed out")
+                    analytics.track(AnalyticsEvent.ConfigSaveTimedOut)
                 }
-                analytics.track(AnalyticsEvent.ConfigSaved)
+                analytics.track(config.toSavedEvent(isInstance))
                 _uiState.update { it.copy(saving = false) }
                 _effects.send(
                     if (isInstance) ConfigureEffect.FinishWithResult(appWidgetId) else ConfigureEffect.CloseApp,
@@ -128,6 +135,22 @@ class ConfigureViewModel
             const val REFRESH_TIMEOUT_MS = 8_000L
         }
     }
+
+/** Settings values and a hidden-calendar count only — never calendar identity. */
+private fun WidgetConfig.toSavedEvent(isInstance: Boolean) =
+    AnalyticsEvent.ConfigSaved(
+        daysAhead = daysAhead,
+        includeYesterday = includeYesterday,
+        emptyDayBehavior = emptyDayBehavior.name,
+        textScale = textScale.name,
+        hideDeclined = hideDeclined,
+        hiddenCalendarCount = hiddenCalendarIds.size,
+        showAttendeePhotos = showAttendeePhotos,
+        showAddButton = showAddButton,
+        showEndTime = showEndTime,
+        showDurationChip = showDurationChip,
+        isInstance = isInstance,
+    )
 
 @Immutable
 data class ConfigureUiState(

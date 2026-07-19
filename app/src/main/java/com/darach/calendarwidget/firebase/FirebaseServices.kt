@@ -1,10 +1,14 @@
 package com.darach.calendarwidget.firebase
 
 import android.content.Context
+import android.os.Bundle
+import com.darach.calendarwidget.core.common.analytics.Analytics
+import com.darach.calendarwidget.core.common.analytics.AnalyticsEvent
 import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.common.flags.FeatureFlags
 import com.darach.calendarwidget.core.common.flags.Flag
 import com.google.firebase.FirebaseApp
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
@@ -39,6 +43,34 @@ class CrashlyticsReporter
 
         override fun log(message: String) {
             if (availability.available) FirebaseCrashlytics.getInstance().log(message)
+        }
+    }
+
+/**
+ * Firebase Analytics sink for the typed [Analytics] facade. Advertising-ID
+ * collection and ad-personalization signals are disabled in the manifest;
+ * event content is bounded by the [AnalyticsEvent] privacy contract.
+ */
+@Singleton
+class FirebaseAnalyticsSink
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val availability: FirebaseAvailability,
+    ) : Analytics {
+        override fun track(event: AnalyticsEvent) {
+            if (!availability.available) return
+            val bundle = Bundle()
+            for ((key, value) in event.params) {
+                when (value) {
+                    is Boolean -> bundle.putLong(key, if (value) 1L else 0L)
+                    is Int -> bundle.putLong(key, value.toLong())
+                    is Long -> bundle.putLong(key, value)
+                    is Double -> bundle.putDouble(key, value)
+                    else -> bundle.putString(key, value.toString())
+                }
+            }
+            FirebaseAnalytics.getInstance(context).logEvent(event.name, bundle)
         }
     }
 

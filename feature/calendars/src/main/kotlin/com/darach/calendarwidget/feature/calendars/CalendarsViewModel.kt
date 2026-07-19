@@ -3,6 +3,7 @@ package com.darach.calendarwidget.feature.calendars
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository
 import com.darach.calendarwidget.core.data.refresh.RefreshReason
 import com.darach.calendarwidget.core.data.refresh.WidgetRefresher
@@ -34,6 +35,7 @@ class CalendarsViewModel
         private val calendarRepository: CalendarRepository,
         private val configRepository: WidgetConfigRepository,
         private val refresher: WidgetRefresher,
+        private val crashReporter: CrashReporter,
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
@@ -87,6 +89,10 @@ class CalendarsViewModel
                             }
                         _uiState.update { it.copy(loading = false, rows = rows.toImmutableList()) }
                     }.onFailure { failure ->
+                        // Missing permission is an expected pre-grant state, not a defect.
+                        if (failure.domainError() != DomainError.PermissionMissing) {
+                            crashReporter.recordNonFatal(failure)
+                        }
                         _uiState.update { it.copy(loading = false, error = failure.domainError()) }
                     }
             }
