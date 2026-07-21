@@ -39,4 +39,33 @@ class AgendaSnapshotSerializationTest {
 
         assertEquals(store, decoded)
     }
+
+    @Test
+    fun `snapshot with each lastError variant round-trips`() {
+        val errors =
+            listOf(
+                DomainError.PermissionMissing,
+                DomainError.ProviderUnavailable,
+                DomainError.QueryFailed("boom"),
+                DomainError.QueryFailed(null),
+            )
+        for (error in errors) {
+            val store =
+                SnapshotStore(
+                    byWidgetId =
+                        mapOf(
+                            12 to
+                                AgendaSnapshot(
+                                    generatedAt = Instant.parse("2026-07-20T08:00:00Z"),
+                                    days = emptyList(),
+                                    lastError = error,
+                                ),
+                        ),
+                )
+
+            val decoded = json.decodeFromString<SnapshotStore>(json.encodeToString(SnapshotStore.serializer(), store))
+
+            assertEquals(store, decoded, "round-trip failed for $error")
+        }
+    }
 }

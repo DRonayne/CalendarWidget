@@ -7,6 +7,7 @@ import androidx.glance.testing.unit.hasText
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.AttendeeStatus
 import com.darach.calendarwidget.core.model.CalendarEvent
+import com.darach.calendarwidget.core.model.DomainError
 import com.darach.calendarwidget.core.model.EmptyDayBehavior
 import com.darach.calendarwidget.core.model.WidgetConfig
 import org.junit.jupiter.api.Test
@@ -91,6 +92,61 @@ class AgendaWidgetContentTest {
                 AgendaWidget(state(emptyList()))
             }
             onNode(hasText("No upcoming events")).assertExists()
+        }
+
+    @Test
+    fun `query failed with no snapshot shows friendly message`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(state(emptyList()).copy(lastError = DomainError.QueryFailed("cursor timeout")))
+            }
+            onNode(hasText("Couldn't load your events right now")).assertExists()
+            onNode(hasText("No upcoming events")).assertDoesNotExist()
+        }
+
+    @Test
+    fun `query failed shows technical detail only in debug builds`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(emptyList()).copy(
+                        lastError = DomainError.QueryFailed("cursor timeout"),
+                        isDebugBuild = true,
+                    ),
+                )
+            }
+            onNode(hasText("DEBUG: cursor timeout")).assertExists()
+        }
+
+    @Test
+    fun `query failed hides technical detail outside debug builds`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(emptyList()).copy(
+                        lastError = DomainError.QueryFailed("cursor timeout"),
+                        isDebugBuild = false,
+                    ),
+                )
+            }
+            onNode(hasText("DEBUG: cursor timeout")).assertDoesNotExist()
+        }
+
+    @Test
+    fun `provider unavailable with stale events shows failed-refresh banner`() =
+        runGlanceAppWidgetUnitTest(timeout = 60.seconds) {
+            setAppWidgetSize(DpSize(270.dp, 280.dp))
+            provideComposable {
+                AgendaWidget(
+                    state(listOf(AgendaDay(today, listOf(event("Standup")))))
+                        .copy(lastError = DomainError.ProviderUnavailable),
+                )
+            }
+            onNode(hasText("Standup")).assertExists()
+            onNode(hasText("Showing saved events — couldn't reach your calendar app")).assertExists()
         }
 
     @Test

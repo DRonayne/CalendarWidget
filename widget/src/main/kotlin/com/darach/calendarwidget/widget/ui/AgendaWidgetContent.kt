@@ -36,6 +36,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.darach.calendarwidget.core.model.AgendaDay
 import com.darach.calendarwidget.core.model.CalendarEvent
+import com.darach.calendarwidget.core.model.DomainError
 import com.darach.calendarwidget.core.model.EmptyDayBehavior
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -97,7 +98,7 @@ private fun Agenda(state: WidgetRenderState) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
         if (days.isEmpty()) {
             HeaderBar(state, scale)
-            EmptyAgenda(scale)
+            EmptyAgenda(state.lastError, state.isDebugBuild, scale)
         } else {
             AgendaList(days, state, scale)
         }
@@ -170,12 +171,68 @@ private fun visibleDays(state: WidgetRenderState): List<AgendaDay> =
     }
 
 @Composable
-private fun EmptyAgenda(scale: Float) {
+private fun EmptyAgenda(
+    error: DomainError?,
+    isDebugBuild: Boolean,
+    scale: Float,
+) {
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = error?.let(::userMessage) ?: "No upcoming events",
+                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (13 * scale).sp),
+            )
+            if (error != null && isDebugBuild) {
+                Spacer(GlanceModifier.height(4.dp))
+                Text(
+                    text = debugDetail(error),
+                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (10 * scale).sp),
+                )
+            }
+        }
+    }
+}
+
+/** Friendly copy shown to every user when a refresh fails. */
+private fun userMessage(error: DomainError): String =
+    when (error) {
+        DomainError.PermissionMissing -> "Calendar access needed to show your events"
+        DomainError.ProviderUnavailable -> "Couldn't reach your calendar app"
+        is DomainError.QueryFailed -> "Couldn't load your events right now"
+    }
+
+/** Technical detail shown only in debug builds, alongside [userMessage]. */
+private fun debugDetail(error: DomainError): String =
+    when (error) {
+        DomainError.PermissionMissing -> "DEBUG: READ_CALENDAR not granted"
+        DomainError.ProviderUnavailable -> "DEBUG: calendar provider returned no cursor"
+        is DomainError.QueryFailed -> "DEBUG: ${error.message ?: "no message"}"
+    }
+
+@Composable
+private fun RefreshFailedBanner(
+    error: DomainError,
+    isDebugBuild: Boolean,
+    scale: Float,
+) {
+    Column(
+        modifier =
+            GlanceModifier
+                .fillMaxWidth()
+                .padding(horizontal = HORIZONTAL_PADDING.dp, vertical = 2.dp),
+    ) {
         Text(
-            text = "No upcoming events",
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (13 * scale).sp),
+            text = "Showing saved events — ${userMessage(error).replaceFirstChar(Char::lowercase)}",
+            style = TextStyle(color = GlanceTheme.colors.error, fontSize = (11 * scale).sp),
+            maxLines = 2,
         )
+        if (isDebugBuild) {
+            Text(
+                text = debugDetail(error),
+                style = TextStyle(color = GlanceTheme.colors.error, fontSize = (9 * scale).sp),
+                maxLines = 2,
+            )
+        }
     }
 }
 
@@ -194,6 +251,9 @@ private fun AgendaList(
         }
     LazyColumn(modifier = GlanceModifier.fillMaxSize(), verticalScrollMode = scrollMode) {
         item { HeaderBar(state, scale) }
+        state.lastError?.let { error ->
+            item { RefreshFailedBanner(error, state.isDebugBuild, scale) }
+        }
         days.forEach { day ->
             item { DayHeader(day, state, scale) }
             if (day.events.isEmpty()) {

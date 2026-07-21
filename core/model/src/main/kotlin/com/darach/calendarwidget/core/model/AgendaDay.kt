@@ -16,11 +16,16 @@ data class AgendaDay(
     val events: List<CalendarEvent>,
 )
 
-/** The rendered agenda for one widget instance, persisted for stale-then-fresh rendering. */
+/**
+ * The rendered agenda for one widget instance, persisted for stale-then-fresh
+ * rendering. [lastError] carries the reason the most recent refresh failed,
+ * if any; it is cleared as soon as a refresh succeeds.
+ */
 @Serializable
 data class AgendaSnapshot(
     val generatedAt: Instant,
     val days: List<AgendaDay>,
+    val lastError: DomainError? = null,
 )
 
 /** All snapshots, keyed by appWidgetId. */

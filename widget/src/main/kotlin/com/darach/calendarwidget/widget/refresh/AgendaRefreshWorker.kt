@@ -66,9 +66,9 @@ class AgendaRefreshWorker
             var transientFailure = false
 
             for (glanceId in glanceIds) {
-                val ok =
+                val appWidgetId = manager.getAppWidgetId(glanceId)
+                val unexpected =
                     guarded {
-                        val appWidgetId = manager.getAppWidgetId(glanceId)
                         val config = store.configFor(appWidgetId)
                         val window = AgendaWindow.from(config, today)
                         calendarRepository
@@ -85,16 +85,20 @@ class AgendaRefreshWorker
                                 earliestBoundary = earliestBoundary?.let { minOf(it, next) } ?: next
                             }.onFailure { failure ->
                                 if (failure.domainError() is DomainError.QueryFailed) transientFailure = true
-                                instrumentation.failed(errorType(failure))
+                                val error = failure.domainError() ?: DomainError.QueryFailed(failure.message)
+                                snapshotRepository.recordError(appWidgetId, error, now)
+                                instrumentation.failed(failure)
                             }
                     }
-                if (!ok) {
+                if (unexpected != null) {
                     transientFailure = true
-                    instrumentation.failed(ERROR_UNEXPECTED)
+                    val detail = unexpected.message ?: unexpected::class.simpleName
+                    snapshotRepository.recordError(appWidgetId, DomainError.QueryFailed(detail), now)
+                    instrumentation.unexpected(unexpected)
                 }
             }
 
-            guarded { AgendaGlanceWidget().updateAll(applicationContext) }
+            guarded { AgendaGlanceWidget().updateAll(applicationContext) }?.let(instrumentation::unexpected)
 
             val fallbackMidnight = today.plusDays(1).atStartOfDay(zone).toInstant()
             scheduler.schedule(earliestBoundary ?: fallbackMidnight)
@@ -109,30 +113,19 @@ class AgendaRefreshWorker
             return if (retrying) Result.retry() else Result.success()
         }
 
-        /** A fixed error category for reporting — never a message. */
-        private fun errorType(failure: Throwable): String =
-            when (failure.domainError()) {
-                DomainError.PermissionMissing -> "permission_missing"
-                DomainError.ProviderUnavailable -> "provider_unavailable"
-                is DomainError.QueryFailed -> "query_failed"
-                null -> ERROR_UNEXPECTED
-            }
-
-        /** Contains one step's failure so the rest of the pipeline still runs. */
+        /** Contains one step's failure so the rest of the pipeline still runs; returns the catch, if any. */
         @Suppress("TooGenericExceptionCaught")
-        private suspend fun guarded(block: suspend () -> Unit): Boolean =
+        private suspend fun guarded(block: suspend () -> Unit): Exception? =
             try {
                 block()
-                true
+                null
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (unexpected: Exception) {
-                instrumentation.unexpected(unexpected)
-                false
+                unexpected
             }
 
         private companion object {
             const val MAX_RETRIES = 3
-            const val ERROR_UNEXPECTED = "unexpected"
         }
     }
