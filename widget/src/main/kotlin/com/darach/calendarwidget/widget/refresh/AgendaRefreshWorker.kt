@@ -87,18 +87,18 @@ class AgendaRefreshWorker
                                 if (failure.domainError() is DomainError.QueryFailed) transientFailure = true
                                 val error = failure.domainError() ?: DomainError.QueryFailed(failure.message)
                                 snapshotRepository.recordError(appWidgetId, error, now)
-                                instrumentation.failed(errorType(failure))
+                                instrumentation.failed(failure)
                             }
                     }
                 if (unexpected != null) {
                     transientFailure = true
                     val detail = unexpected.message ?: unexpected::class.simpleName
                     snapshotRepository.recordError(appWidgetId, DomainError.QueryFailed(detail), now)
-                    instrumentation.failed(ERROR_UNEXPECTED)
+                    instrumentation.unexpected(unexpected)
                 }
             }
 
-            guarded { AgendaGlanceWidget().updateAll(applicationContext) }
+            guarded { AgendaGlanceWidget().updateAll(applicationContext) }?.let(instrumentation::unexpected)
 
             val fallbackMidnight = today.plusDays(1).atStartOfDay(zone).toInstant()
             scheduler.schedule(earliestBoundary ?: fallbackMidnight)
@@ -113,15 +113,6 @@ class AgendaRefreshWorker
             return if (retrying) Result.retry() else Result.success()
         }
 
-        /** A fixed error category for reporting — never a message. */
-        private fun errorType(failure: Throwable): String =
-            when (failure.domainError()) {
-                DomainError.PermissionMissing -> "permission_missing"
-                DomainError.ProviderUnavailable -> "provider_unavailable"
-                is DomainError.QueryFailed -> "query_failed"
-                null -> ERROR_UNEXPECTED
-            }
-
         /** Contains one step's failure so the rest of the pipeline still runs; returns the catch, if any. */
         @Suppress("TooGenericExceptionCaught")
         private suspend fun guarded(block: suspend () -> Unit): Exception? =
@@ -131,12 +122,10 @@ class AgendaRefreshWorker
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (unexpected: Exception) {
-                instrumentation.unexpected(unexpected)
                 unexpected
             }
 
         private companion object {
             const val MAX_RETRIES = 3
-            const val ERROR_UNEXPECTED = "unexpected"
         }
     }
