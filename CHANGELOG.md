@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-alpha05](https://github.com/DRonayne/CalendarWidget/compare/v1.0.0-alpha04...v1.0.0-alpha05) (2026-07-21)
+
+
+### Features
+
+* **widget:** surface friendly errors when refresh fails ([#32](https://github.com/DRonayne/CalendarWidget/issues/32)) ([c67f363](https://github.com/DRonayne/CalendarWidget/commit/c67f36334db30dd1205890530c6a7fee0746c525))
+
 ## [1.0.0-alpha04](https://github.com/DRonayne/CalendarWidget/compare/v1.0.0-alpha03...v1.0.0-alpha04) (2026-07-19)
 
 
