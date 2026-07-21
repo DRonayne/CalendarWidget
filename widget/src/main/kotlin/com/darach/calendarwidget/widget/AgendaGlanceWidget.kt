@@ -16,7 +16,7 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.currentState
-import com.darach.calendarwidget.core.common.build.BuildInfo
+import com.darach.calendarwidget.core.common.buildinfo.BuildInfo
 import com.darach.calendarwidget.core.common.flags.FeatureFlags
 import com.darach.calendarwidget.core.common.flags.Flag
 import com.darach.calendarwidget.core.data.config.WidgetConfigRepository

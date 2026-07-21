@@ -1,7 +1,7 @@
 package com.darach.calendarwidget.di
 
 import com.darach.calendarwidget.BuildConfig
-import com.darach.calendarwidget.core.common.build.BuildInfo
+import com.darach.calendarwidget.core.common.buildinfo.BuildInfo
 import javax.inject.Inject
 import javax.inject.Singleton
 
