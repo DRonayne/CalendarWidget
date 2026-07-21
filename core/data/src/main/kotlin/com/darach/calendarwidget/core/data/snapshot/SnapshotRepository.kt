@@ -2,11 +2,13 @@ package com.darach.calendarwidget.core.data.snapshot
 
 import androidx.datastore.core.DataStore
 import com.darach.calendarwidget.core.model.AgendaSnapshot
+import com.darach.calendarwidget.core.model.DomainError
 import com.darach.calendarwidget.core.model.SnapshotStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -25,6 +27,17 @@ interface SnapshotRepository {
     suspend fun put(
         appWidgetId: Int,
         snapshot: AgendaSnapshot,
+    )
+
+    /**
+     * Records why the most recent refresh failed, preserving any previously
+     * rendered days so a stale-but-visible agenda isn't wiped out by a
+     * transient failure.
+     */
+    suspend fun recordError(
+        appWidgetId: Int,
+        error: DomainError,
+        now: Instant,
     )
 
     suspend fun remove(appWidgetIds: Collection<Int>)
@@ -48,6 +61,20 @@ class SnapshotRepositoryImpl
             snapshot: AgendaSnapshot,
         ) {
             dataStore.updateData { it.copy(byWidgetId = it.byWidgetId + (appWidgetId to snapshot)) }
+        }
+
+        override suspend fun recordError(
+            appWidgetId: Int,
+            error: DomainError,
+            now: Instant,
+        ) {
+            dataStore.updateData { store ->
+                val existing = store.byWidgetId[appWidgetId]
+                val updated =
+                    existing?.copy(lastError = error)
+                        ?: AgendaSnapshot(generatedAt = now, days = emptyList(), lastError = error)
+                store.copy(byWidgetId = store.byWidgetId + (appWidgetId to updated))
+            }
         }
 
         override suspend fun remove(appWidgetIds: Collection<Int>) {

@@ -1,13 +1,19 @@
 package com.darach.calendarwidget.core.model
 
+import kotlinx.serialization.Serializable
+
 /** Recoverable failures surfaced to UI/widget as states, never as crashes. */
+@Serializable
 sealed interface DomainError {
     /** READ_CALENDAR (or READ_CONTACTS where relevant) is not granted. */
+    @Serializable
     data object PermissionMissing : DomainError
 
     /** The calendar provider is missing or refused the connection. */
+    @Serializable
     data object ProviderUnavailable : DomainError
 
+    @Serializable
     data class QueryFailed(
         val message: String?,
     ) : DomainError

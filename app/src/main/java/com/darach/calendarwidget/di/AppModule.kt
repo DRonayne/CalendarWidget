@@ -1,6 +1,7 @@
 package com.darach.calendarwidget.di
 
 import com.darach.calendarwidget.core.common.analytics.Analytics
+import com.darach.calendarwidget.core.common.build.BuildInfo
 import com.darach.calendarwidget.core.common.crash.CrashReporter
 import com.darach.calendarwidget.core.common.flags.FeatureFlags
 import com.darach.calendarwidget.core.data.refresh.PlacedWidgets
@@ -32,4 +33,7 @@ abstract class AppModule {
 
     @Binds
     abstract fun analytics(impl: FirebaseAnalyticsSink): Analytics
+
+    @Binds
+    abstract fun buildInfo(impl: AppBuildInfo): BuildInfo
 }

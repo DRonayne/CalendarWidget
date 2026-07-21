@@ -66,9 +66,9 @@ class AgendaRefreshWorker
             var transientFailure = false
 
             for (glanceId in glanceIds) {
-                val ok =
+                val appWidgetId = manager.getAppWidgetId(glanceId)
+                val unexpected =
                     guarded {
-                        val appWidgetId = manager.getAppWidgetId(glanceId)
                         val config = store.configFor(appWidgetId)
                         val window = AgendaWindow.from(config, today)
                         calendarRepository
@@ -85,11 +85,15 @@ class AgendaRefreshWorker
                                 earliestBoundary = earliestBoundary?.let { minOf(it, next) } ?: next
                             }.onFailure { failure ->
                                 if (failure.domainError() is DomainError.QueryFailed) transientFailure = true
+                                val error = failure.domainError() ?: DomainError.QueryFailed(failure.message)
+                                snapshotRepository.recordError(appWidgetId, error, now)
                                 instrumentation.failed(errorType(failure))
                             }
                     }
-                if (!ok) {
+                if (unexpected != null) {
                     transientFailure = true
+                    val detail = unexpected.message ?: unexpected::class.simpleName
+                    snapshotRepository.recordError(appWidgetId, DomainError.QueryFailed(detail), now)
                     instrumentation.failed(ERROR_UNEXPECTED)
                 }
             }
@@ -118,17 +122,17 @@ class AgendaRefreshWorker
                 null -> ERROR_UNEXPECTED
             }
 
-        /** Contains one step's failure so the rest of the pipeline still runs. */
+        /** Contains one step's failure so the rest of the pipeline still runs; returns the catch, if any. */
         @Suppress("TooGenericExceptionCaught")
-        private suspend fun guarded(block: suspend () -> Unit): Boolean =
+        private suspend fun guarded(block: suspend () -> Unit): Exception? =
             try {
                 block()
-                true
+                null
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (unexpected: Exception) {
                 instrumentation.unexpected(unexpected)
-                false
+                unexpected
             }
 
         private companion object {
