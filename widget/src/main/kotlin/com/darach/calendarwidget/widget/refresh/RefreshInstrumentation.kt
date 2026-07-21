@@ -42,9 +42,9 @@ class RefreshInstrumentation
 
         /** A bug that escaped the guarded pipeline: breadcrumbed, tracked, and always a non-fatal. */
         fun unexpected(throwable: Throwable) {
-            crashReporter.recordNonFatal(throwable)
             crashReporter.log("agenda refresh failed: $ERROR_UNEXPECTED")
             analytics.track(AnalyticsEvent.RefreshFailed(ERROR_UNEXPECTED))
+            crashReporter.recordNonFatal(throwable)
         }
 
         fun completed(
